@@ -1,12 +1,12 @@
 ## Sprint-0
-    - [ ] Creation working dir
-    - [ ] Creation projet test
-    - [ ] Creation script pour transformer en jar
-    - [ ] Update script deploiement projet test:
+    - [x] Creation working dir
+    - [x] Creation projet test
+    - [x] Creation script pour transformer en jar
+    - [x] Update script deploiement projet test:
         - Ajout de jar du framework
-    - [ ] Creation FronController
+    - [x] Creation FronController
         - Creation servlet de frontController 
         - Recuperation url 
-    - [ ] Configuration web.xml projet test
+    - [x] Configuration web.xml projet test
         - Creation balise servlet
         - Mapping vers '/'
