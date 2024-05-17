@@ -3,7 +3,7 @@ set "work_dir=C:\Users\SERGIANA\Documents\Study\S4\Mr-Naina\SprintFramework"
 set "temp=%work_dir%\temp"
 set "src=%work_dir%\src"
 set "lib=%work_dir%\lib"
-set jar=framework.jar
+set "jar=framework.jar"
 
 if exist "%temp%" ( 
     rd /s /q "%temp%"
@@ -17,7 +17,7 @@ dir /s /B "%lib%\*.jar" > libs.txt
 :: Construire le classpath
 set "classpath="
 for /F "delims=" %%i in (libs.txt) do set "classpath=%%i"
-echo "%classpath%"
+@REM echo "%classpath%"
 :: Exécuter la commande javac
 javac -d "%temp%" -cp "%classpath%" @sources.txt
 

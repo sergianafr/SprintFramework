@@ -5,8 +5,15 @@
 package src.mg.itu.prom16;
 
 import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext; 
+
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+
+import src.annotations.Controller;
+import src.utils.*;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +25,8 @@ import jakarta.servlet.http.HttpSession;
  * @author SERGIANA
  */
 public class FrontController extends HttpServlet {
+    private boolean checked=false;
+    private List<String> listControllers;
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -31,8 +40,30 @@ public class FrontController extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
+        super.init();
         try (PrintWriter out = response.getWriter()) {
-            out.println(request.getRequestURL().toString());
+            // out.println(request.getRequestURL().toString());
+            ServletContext context = getServletContext();
+            String packageName = context.getInitParameter("Controllers");
+            out.println(checked);
+            out.print(packageName);
+            if(this.checked == false){
+                this.listControllers = new ArrayList<String>();
+                try {
+                    List<Class<?>> classes = PackageScanner.getClasses(packageName, context);
+                    out.print(classes.size());
+                    for(Class<?> c : classes){
+                        if (c.getAnnotation(Controller.class) != null){
+                            listControllers.add(c.getName());
+                        }
+                    }
+                } catch (Exception e) {
+                    out.print(e.getMessage());
+                }
+            }
+            for (String string : listControllers) {
+                out.println(string);
+            }
         }
     }
 
