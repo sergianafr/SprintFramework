@@ -34,3 +34,36 @@
             - [x] scanner le contenu du package inseré dans web.xml client
             - [x] ajouter les noms des classes annotés dans listControllers
     - [x] Afficher le contenu de listControllers
+
+## Sprint-2:
+### But:
+Get methodes dans les controllers
+
+#### Framework:
+- [] Creation annotation pour les methodes: Get("url")
+- [ ] Creation classe mapping:
+- [] Dans init: 
+    - [] mettre dans init la recherche des controllers 
+- [] Recuperation des methodes qui possedent l'annotation get:
+    - [] Recuperation des controllers
+    - [] Creation hashmap{annotation value(url): Mapping}
+- [] map les methodes : HashMap {url: mapping}
+- mapping={class: method}
+
+## Sprint-3:
+### But:
+Invocation dynamique des methodes (afficher les string que retournent les methodes)
+
+#### Framework:
+
+
+## Sprint-4:
+### But:
+Invocation dynamique des methodes (afficher les string que retournent les methodes)
+
+#### Framework:
+Methode qui retourne un ModelView et redirection de page
+[ ] Creation classe ModelView:
+    - String url
+    - HashMap<> data;
+[ ] Redirection de la page vers l'url du model and view et affichage des data
