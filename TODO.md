@@ -63,7 +63,7 @@ Invocation dynamique des methodes (afficher les string que retournent les method
 
 #### Framework:
 Methode qui retourne un ModelView et redirection de page
-[ ] Creation classe ModelView:
+[x] Creation classe ModelView:
     - String url
     - HashMap<> data;
-[ ] Redirection de la page vers l'url du model and view et affichage des data
+[x] Redirection de la page vers l'url du model and view et affichage des data
