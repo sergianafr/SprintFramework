@@ -21,8 +21,8 @@ for /F "delims=" %%i in (libs.txt) do set "classpath=%%i"
 :: Exécuter la commande javac
 javac -d "%temp%" -cp "%classpath%" @sources.txt
 
-@REM del sources.txt
-@REM del libs.txt
+del sources.txt
+del libs.txt
 
 rem creation fichier jar
 cd temp
