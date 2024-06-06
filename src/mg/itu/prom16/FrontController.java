@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import src.annotations.*;
+import src.classes.ModelView;
 import src.utils.*;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -48,10 +49,6 @@ public class FrontController extends HttpServlet {
         resp.setContentType("text/plain");
 
         PrintWriter out = resp.getWriter();
-        
-        for (String string : urlMapping.keySet()) {
-            out.println(string);
-        }
 
         // getting the URL requested by the client
         String requestedURL = req.getRequestURL().toString();
@@ -62,8 +59,15 @@ public class FrontController extends HttpServlet {
         if(urlMapping.containsKey(urlToSearch)) {
             Mapping m = urlMapping.get(urlToSearch);
             try {
-                String result = (String) m.invoke();
-                out.println(result);
+                Object result = m.invoke();
+                if (result instanceof String){
+                    out.println(result);
+                } else if (result instanceof ModelView){
+                    ModelView view = (ModelView)result; 
+                    req.setAttribute("attribut", view.getData());
+                    RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
+                    dispatcher.forward(req, resp);
+                }
             } catch (Exception e) {
                 out.println(e.getMessage());
             }
@@ -74,8 +78,8 @@ public class FrontController extends HttpServlet {
 
         out.flush();
         out.close();
-        
     }
+
     public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException {
         List<Class<?>> classes = new ArrayList<>();
 
