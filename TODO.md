@@ -67,3 +67,14 @@ Methode qui retourne un ModelView et redirection de page
     - String url
     - HashMap<> data;
 [x] Redirection de la page vers l'url du model and view et affichage des data
+
+## Sprint-5:
+### But: 
+Creation exception 
+
+#### Framework:
+[] Exception de package vide
+    - [] Verfication 
+[] Exception de package invalide
+[] Exception d'url dupliqué 
+[] Exception de type de retour qui n'est ni modelview ni string

@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.naming.directory.InvalidAttributesException;
+
 import src.annotations.*;
 import src.classes.ModelView;
 import src.utils.*;
@@ -47,40 +49,38 @@ public class FrontController extends HttpServlet {
      
      public void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/plain");
-
         PrintWriter out = resp.getWriter();
-
-        // getting the URL requested by the client
-        String requestedURL = req.getRequestURL().toString();
-        String[] partedReq = requestedURL.split("/");
-        String urlToSearch = partedReq[partedReq.length - 1];
-        
-        // searching for that URL inside of our HashMap
-        if(urlMapping.containsKey(urlToSearch)) {
-            Mapping m = urlMapping.get(urlToSearch);
-            try {
-                Object result = m.invoke();
-                if (result instanceof String){
-                    out.println(result);
-                } else if (result instanceof ModelView){
-                    ModelView view = (ModelView)result; 
-                    req.setAttribute("attribut", view.getData());
-                    RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
-                    dispatcher.forward(req, resp);
-                }
-            } catch (Exception e) {
-                out.println(e.getMessage());
-            }
+        try {
+            // getting the URL requested by the client
+            String requestedURL = req.getRequestURL().toString();
+            String[] partedReq = requestedURL.split("/");
+            String urlToSearch = partedReq[partedReq.length - 1];
             
-        } else {
-            out.println("No method matching '" + urlToSearch + "' to call");
+            // searching for that URL inside of our HashMap
+            if(urlMapping.containsKey(urlToSearch)) {
+                Mapping m = urlMapping.get(urlToSearch);
+                    Object result = m.invoke();
+                    if (result instanceof String){
+                        out.println(result);
+                    } else if (result instanceof ModelView){
+                        ModelView view = (ModelView)result; 
+                        req.setAttribute("attribut", view.getData());
+                        RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
+                        dispatcher.forward(req, resp);
+                    }
+                
+                } else {
+                    out.println("No method matching '" + urlToSearch + "' to call");
+                }
+            
+            out.flush();
+            out.close();
+        } catch (Exception e) {
+            out.println(e.getMessage());
         }
-
-        out.flush();
-        out.close();
     }
 
-    public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException {
+    public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
         List<Class<?>> classes = new ArrayList<>();
 
         // making sure the path to the controller package is correct
@@ -89,7 +89,12 @@ public class FrontController extends HttpServlet {
 
         File directory = new File(realPath);
         File[] files = directory.listFiles();
-
+        if(!directory.exists()){
+            throw new InvalidAttributesException("The package "+packageName+" does not exist.");
+        }
+        else if(files.length <= 0){
+            throw new InvalidAttributesException("The package "+packageName+" is empty.");
+        } 
         for(File f : files) {
             // filtering class files
             if(f.isFile() && f.getName().endsWith(".class")) {
@@ -130,9 +135,11 @@ public class FrontController extends HttpServlet {
                     Method[] allMethods = classe.getMethods();
                     for (Method m : allMethods) {
                         if (m.isAnnotationPresent(Get.class)) {
-                            // when a method is annotated with Get, we fetch its url value and create a new couple in the urlsToMethods Map
                             Get mGetAnnotation = (Get) m.getAnnotation(Get.class);
-                            System.out.println(m.getName()+"jngngngngnngng");
+                            if(urls.containsKey(mGetAnnotation.url())){
+                                throw new InvalidAttributesException("The url "+mGetAnnotation.url()+" is duplicated.");
+                            }
+                            // when a method is annotated with Get, we fetch its url value and create a new couple in the urlsToMethods Map
                             urls.put(mGetAnnotation.url(), new Mapping(classe.getName(), m.getName()));
                         }
                     }
@@ -142,7 +149,7 @@ public class FrontController extends HttpServlet {
             this.listControllers = controllers;
             this.urlMapping = urls;
         } catch (Exception e) {
-            
+            throw new ServletException(e.getMessage());
         }
     }
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
