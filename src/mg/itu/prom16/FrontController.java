@@ -11,9 +11,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Vector;
 
 import javax.naming.directory.InvalidAttributesException;
 
@@ -31,7 +33,6 @@ import jakarta.servlet.http.HttpSession;
  * @author SERGIANA
  */
 public class FrontController extends HttpServlet {
-    private boolean checked=false;
     private List<String> listControllers;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
 
@@ -46,32 +47,62 @@ public class FrontController extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
 
-     
+    
+    
      public void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
         try {
-            // getting the URL requested by the client
+            // getting the URL requested
             String requestedURL = req.getRequestURL().toString();
             String[] partedReq = requestedURL.split("/");
-            String urlToSearch = partedReq[partedReq.length - 1];
-            
-            // searching for that URL inside of our HashMap
+            String urlToSearch = partedReq[partedReq.length - 1];    
+
+            // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
                 Mapping m = urlMapping.get(urlToSearch);
-                    Object result = m.invoke();
-                    if (result instanceof String){
-                        out.println(result);
-                    } else if (result instanceof ModelView){
-                        ModelView view = (ModelView)result; 
-                        req.setAttribute("attribut", view.getData());
-                        RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
-                        dispatcher.forward(req, resp);
+                Parameter[] params = null;
+                String[] args = null;
+
+                if(m.getParameters() != null) {
+                    // Retrieve the parameters of the method from the request first 
+                    params = m.getParameters();
+                    args = new String[params.length];
+                    int i = 0;
+                    for (Parameter param : params) {
+                        args[i] = req.getParameter(param.getName());
                     }
-                
-                } else {
-                    out.println("No method matching '" + urlToSearch + "' to call");
                 }
+                
+                // Invoking the method 
+                Object result = m.invoke(args);
+                if (result instanceof String){
+                    out.println(result);
+                } else if (result instanceof ModelView){
+                    ModelView view = (ModelView)result; 
+                    req.setAttribute("attribut", view.getData());
+
+                    RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
+                    dispatcher.forward(req, resp);
+                }
+
+                // if(m.getParameters()==null){
+                //     Object result = m.invoke();
+                //     if (result instanceof String){
+                //         out.println(result);
+                //     } else if (result instanceof ModelView){
+                //         Object[] args = new Object[m.getParameters().length];
+                //         ModelView view = (ModelView)result; 
+                //         req.setAttribute("attribut", view.getData());
+    
+                //         RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
+                //         dispatcher.forward(req, resp);
+                //     }
+                // 
+                
+            } else {
+                out.println("No method matching '" + urlToSearch + "' to call");
+            }
             
             out.flush();
             out.close();
@@ -79,6 +110,9 @@ public class FrontController extends HttpServlet {
             out.println(e.getMessage());
         }
     }
+
+    
+    
 
     public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
         List<Class<?>> classes = new ArrayList<>();
@@ -140,7 +174,7 @@ public class FrontController extends HttpServlet {
                                 throw new InvalidAttributesException("The url "+mGetAnnotation.url()+" is duplicated.");
                             }
                             // when a method is annotated with Get, we fetch its url value and create a new couple in the urlsToMethods Map
-                            urls.put(mGetAnnotation.url(), new Mapping(classe.getName(), m.getName()));
+                            urls.put(mGetAnnotation.url(), new Mapping(classe.getName(), m.getName(), m.getParameters()));
                         }
                     }
                 }

@@ -40,14 +40,14 @@
 Get methodes dans les controllers
 
 #### Framework:
-- [] Creation annotation pour les methodes: Get("url")
-- [ ] Creation classe mapping:
-- [] Dans init: 
-    - [] mettre dans init la recherche des controllers 
-- [] Recuperation des methodes qui possedent l'annotation get:
-    - [] Recuperation des controllers
-    - [] Creation hashmap{annotation value(url): Mapping}
-- [] map les methodes : HashMap {url: mapping}
+- [x] Creation annotation pour les methodes: Get("url")
+- [x] Creation classe mapping:
+- [x] Dans init: 
+    - [x] mettre dans init la recherche des controllers 
+- [x] Recuperation des methodes qui possedent l'annotation get:
+    - [x] Recuperation des controllers
+    - [x] Creation hashmap{annotation value(url): Mapping}
+- [x] map les methodes : HashMap {url: mapping}
 - mapping={class: method}
 
 ## Sprint-3:
@@ -73,8 +73,29 @@ Methode qui retourne un ModelView et redirection de page
 Creation exception 
 
 #### Framework:
-[] Exception de package vide
-    - [] Verfication 
-[] Exception de package invalide
-[] Exception d'url dupliqué 
-[] Exception de type de retour qui n'est ni modelview ni string
+[x] Exception de package vide
+[x] Exception de package invalide
+[x] Exception d'url dupliqué 
+[x] Exception de type de retour qui n'est ni modelview ni string
+
+
+## Sprint-6
+### But: 
+Recuperer des données d'un formulaire et l'envoyer dans la fonction a l'action (POST)
+
+#### Framework:
+- [x] Ajout d'attribut dans la classe Mapping: arguments de la fonction de type Parameter[]
+- [x] Modification de la fonction invoke; il faut récuperer les arguments avant de l'invoquer
+##### Partie 1:
+- [ ] Récuperation des paramètres dans la requete HTTP 
+    - [ ] Recherche des noms des arguments de la fonction
+    - [ ] Si les noms n'existent pas, on retourne null
+    - [ ] Recuperation des valeurs passés par la requete à partir des noms des arguments
+##### Partie 2:
+- [ ] Creation annotation @param(name="")
+- [ ] Si le paramètre dans la requete HTTP au nom de l'argument n'existe pas, on check l'annotation @param:
+    - [ ] Si il existe: on recupere le name correspondant a l'annotation de l'argument
+    - [ ] Sinon, on retourne null
+#### Test:
+- [ ] Creation méthode retournant ModelView qui prend en paramètre des arguments provenant d'un formulaire
+
