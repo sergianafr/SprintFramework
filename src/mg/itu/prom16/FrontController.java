@@ -56,7 +56,8 @@ public class FrontController extends HttpServlet {
             // getting the URL requested
             String requestedURL = req.getRequestURL().toString();
             String[] partedReq = requestedURL.split("/");
-            String urlToSearch = partedReq[partedReq.length - 1];    
+            String urlToSearch = partedReq[partedReq.length - 1];  
+            System.out.println(requestedURL);  
 
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
@@ -65,6 +66,7 @@ public class FrontController extends HttpServlet {
                 String[] args = null;
 
                 if(m.getParameters() != null) {
+                    System.out.println(m.getParameters());
                     // Retrieve the parameters of the method from the request first 
                     params = m.getParameters();
                     args = new String[params.length];
@@ -107,7 +109,8 @@ public class FrontController extends HttpServlet {
             out.flush();
             out.close();
         } catch (Exception e) {
-            out.println(e.getMessage());
+            e.printStackTrace();
+            out.println(e.getMessage()+"   exccc");
         }
     }
 

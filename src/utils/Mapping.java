@@ -18,7 +18,7 @@ public class Mapping {
         Class<?>[] clazz = new Class[this.parameters.length];
         int i = 0;
         for (Parameter param : this.parameters) {
-            clazz[i] = param.getClass();
+            clazz[i] = param.getType();
             i++;
         }
         return clazz;
