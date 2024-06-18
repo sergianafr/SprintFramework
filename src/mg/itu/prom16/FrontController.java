@@ -67,12 +67,19 @@ public class FrontController extends HttpServlet {
 
                 if(m.getParameters() != null) {
                     System.out.println(m.getParameters());
+
                     // Retrieve the parameters of the method from the request first 
                     params = m.getParameters();
                     args = new String[params.length];
                     int i = 0;
                     for (Parameter param : params) {
-                        args[i] = req.getParameter(param.getName());
+                        String paramString = req.getParameter(param.getName());
+                        if(paramString != null){
+                            args[i] = req.getParameter(param.getName());
+                        } else {
+                            String paramName = param.getAnnotation(Param.class).name();
+                            args[i] = req.getParameter(paramName);
+                        }
                     }
                 }
                 
@@ -88,19 +95,6 @@ public class FrontController extends HttpServlet {
                     dispatcher.forward(req, resp);
                 }
 
-                // if(m.getParameters()==null){
-                //     Object result = m.invoke();
-                //     if (result instanceof String){
-                //         out.println(result);
-                //     } else if (result instanceof ModelView){
-                //         Object[] args = new Object[m.getParameters().length];
-                //         ModelView view = (ModelView)result; 
-                //         req.setAttribute("attribut", view.getData());
-    
-                //         RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
-                //         dispatcher.forward(req, resp);
-                //     }
-                // 
                 
             } else {
                 out.println("No method matching '" + urlToSearch + "' to call");

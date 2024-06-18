@@ -87,12 +87,12 @@ Recuperer des données d'un formulaire et l'envoyer dans la fonction a l'action 
 - [x] Ajout d'attribut dans la classe Mapping: arguments de la fonction de type Parameter[]
 - [x] Modification de la fonction invoke; il faut récuperer les arguments avant de l'invoquer
 ##### Partie 1:
-- [ ] Récuperation des paramètres dans la requete HTTP 
-    - [ ] Recherche des noms des arguments de la fonction
-    - [ ] Si les noms n'existent pas, on retourne null
-    - [ ] Recuperation des valeurs passés par la requete à partir des noms des arguments
+- [x] Récuperation des paramètres dans la requete HTTP 
+    - [x] Recherche des noms des arguments de la fonction
+    - [x] Si les noms n'existent pas, on retourne null
+    - [x] Recuperation des valeurs passés par la requete à partir des noms des arguments
 ##### Partie 2:
-- [ ] Creation annotation @param(name="")
+- [x] Creation annotation @param(name="")
 - [ ] Si le paramètre dans la requete HTTP au nom de l'argument n'existe pas, on check l'annotation @param:
     - [ ] Si il existe: on recupere le name correspondant a l'annotation de l'argument
     - [ ] Sinon, on retourne null

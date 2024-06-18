@@ -25,3 +25,7 @@ Tomcat version: Tomcat 10.1
             <param-name>Controllers</param-name> 
             <param-value>src.controller</param-value>
         </context-param>
+
+## Annotations
+- Annotate your controllers classes with src.annotations.Controller
+- Annotate your controller methods with src.annotations.Get(url="method's url").
