@@ -29,3 +29,4 @@ Tomcat version: Tomcat 10.1
 ## Annotations
 - Annotate your controllers classes with src.annotations.Controller
 - Annotate your controller methods with src.annotations.Get(url="method's url").
+- Annotate the parameters of your controllers methods with src.annotations.Param(name="Parameter name"). The name should correspond to the name of the form input where you retrieve it.
