@@ -64,42 +64,25 @@ public class FrontController extends HttpServlet {
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
                 Mapping m = urlMapping.get(urlToSearch);
-                Parameter[] params = m.getParameters();
-                String[] args = this.getStringMethodArgs(params, req);
-
-                // if(m.getParameters() != null) {
-                //     System.out.println(m.getParameters());
-
-                //     // Retrieve the parameters of the method from the request first 
-                //     params = m.getParameters();
-                //     args = new String[params.length];
-                //     int i = 0;
-                //     for (Parameter param : params) {
-                //         String paramString = req.getParameter(param.getName());
-                //         if(paramString != null){
-                //             args[i] = req.getParameter(param.getName());
-                //         } else {
-                //             String paramName = param.getAnnotation(Param.class).name();
-                //             args[i] = req.getParameter(paramName);
-                //         }
-                //     }
-                // }
-                
-                // Invoking the method 
+                Object[] args = this.findParams(req, m);
                 Object result = m.invoke(args);
-                if (result instanceof String){
-                    out.println(result);
-                } else if (result instanceof ModelView){
-                    ModelView view = (ModelView)result; 
-                    req.setAttribute("attribut", view.getData());
+                Class<?> retour = m.getReturnType();
 
-                    RequestDispatcher dispatcher = req.getRequestDispatcher(view.getUrl());
+                if(retour == String.class) {
+                    out.println((String) result);
+                } else if(retour == ModelView.class) {
+                    ModelView mv = (ModelView) result;
+                    req.setAttribute("attribut", mv.getData());
+
+                    RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
                     dispatcher.forward(req, resp);
+                } else {
+                    throw new ServletException("The return type is not supported.");
                 }
 
                 
             } else {
-                out.println("No method matching '" + urlToSearch + "' to call");
+                out.println("No method matching '" + urlToSearch );
             }
             
             out.flush();
@@ -110,38 +93,72 @@ public class FrontController extends HttpServlet {
         }
     }
 
-    protected Object[] getMethodArgs(Parameter[] params, HttpServletRequest req) throws Exception{
+    public Object[] findParams(HttpServletRequest req, Mapping method) throws Exception {
+        List<Object> args = new ArrayList<>();
+
+        Class<?> clazz = Class.forName(method.getClassName());
+        Method m = clazz.getMethod(method.getMethodName(), method.getTypes());
+
         try {
-            if(params != null){
-                Object[] args = new Object[params.length];
-                int i = 0;
-                for (Parameter param : params) {
-                    if(!param.getType().isPrimitive()){
-                        Class parameterType = param.getType();
-                        String name = param.getName();
-                        Vector<Object> attr = new Vector<Object>();
-                        for(Field field : parameterType.getDeclaredFields()){
-                            attr.add(req.getParameter(name+"."+field.getName()));
-                        }
-                        Constructor cons = parameterType.getConstructor(null);
-                        Object obj = cons.newInstance(null);
-                    }
+    
+            for (int i = 0; i < method.getParameters().length; i++) {
+                Parameter p = method.getParameters()[i];
+                Object o = null;
+                String key = "";
+    
+                if(p.isAnnotationPresent(Param.class)) {
+                    Param annotationParam = (Param) p.getAnnotation(Param.class);
+                    key = annotationParam.name();
+                } else {
+                    key = p.getName();
                 }
+    
+                Class<?> paramType = p.getType();
+                if(!paramType.isPrimitive() && paramType != String.class) {
+                    
+                    Constructor c = paramType.getDeclaredConstructor();
+                    o = c.newInstance();
+    
+                   
+                    Field[] attributes = paramType.getDeclaredFields();
+                    for (Field attr : attributes) {
+                        try {
+                            String attrKey = key + ".";
+                            if(attr.isAnnotationPresent(src.annotations.Field.class)) {
+                                
+                                src.annotations.Field f = attr.getAnnotation(src.annotations.Field.class);
+                                attrKey += f.name();
+                            } else {
+                                attrKey += attr.getName();
+                            }
+
+                            String attrValStr = req.getParameter(attrKey);
+
+                            Method setter = Utils.setter(attr, paramType);
+                            setter.invoke(o, Utils.convert(attrValStr, attr.getType()));
+                        } catch (Exception e) {
+                            throw e;
+                        }
+                    }
+                } else {
+                    String valueStr = req.getParameter(key);
+                    o = Utils.convert(valueStr, paramType);
+                }
+                
+                args.add(o);
             }
         } catch (Exception e) {
-           throw e;
+            throw e;
         }
-        return null;
+        
+
+        if(args.size() > 0) {
+            return args.toArray();
+        } else {
+            return null;
+        }
     }
 
-    proc
-
-    // protected void settingAttribute(Class classe, Object obj){
-    //     for(Field field : classe.getDeclaredFields()){
-    //         String setter = 
-    //         Method m = classe.getMethod("set"+fi);
-    //     }
-    // }
 
     
     protected String[] getStringMethodArgs(Parameter[] params, HttpServletRequest req){
@@ -165,7 +182,7 @@ public class FrontController extends HttpServlet {
     public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
         List<Class<?>> classes = new ArrayList<>();
 
-        // making sure the path to the controller package is correct
+        
         String path = "WEB-INF/classes/" + packageName.replace(".", "/");
         String realPath = getServletContext().getRealPath(path);
 
@@ -193,27 +210,26 @@ public class FrontController extends HttpServlet {
     public void init() throws ServletException {
         super.init();
 
-        // fetching the controller package's value from web.xml
         ServletContext context = getServletContext();
         String packageName = context.getInitParameter("Controllers");
 
         List<String> controllers = listControllers;
-        controllers = new ArrayList<>(); // making sure the variable isn't null and emptying it everytime
+        controllers = new ArrayList<>(); 
 
         HashMap<String, Mapping> urls = urlMapping;
-        urls = new HashMap<>(); // making sure the variable isn't null and emptying it everytime
+        urls = new HashMap<>(); 
         
         try {
 
-            // fetching all classes in the controllers package
+           
             List<Class<?>> allClasses = this.findClasses(packageName);
 
             for (Class<?> classe : allClasses) {
-                // checking which of these classes are controllers
+                // checking the controller class
                 if(classe.isAnnotationPresent(Controller.class)) {
                     controllers.add(classe.getName());
                     
-                    // iterating through all the methods of the controller classes to check which ones are annotated with Get
+                    // Getting the methods annotated with get
                     Method[] allMethods = classe.getMethods();
                     for (Method m : allMethods) {
                         if (m.isAnnotationPresent(Get.class)) {
@@ -221,7 +237,7 @@ public class FrontController extends HttpServlet {
                             if(urls.containsKey(mGetAnnotation.url())){
                                 throw new InvalidAttributesException("The url "+mGetAnnotation.url()+" is duplicated.");
                             }
-                            // when a method is annotated with Get, we fetch its url value and create a new couple in the urlsToMethods Map
+                            // storing the url and the method Mapping matching to it in the map
                             urls.put(mGetAnnotation.url(), new Mapping(classe.getName(), m.getName(), m.getParameters()));
                         }
                     }
