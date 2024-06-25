@@ -35,20 +35,33 @@ public class Mapping {
 
         return o;
     }
-    // public Object invoke(Object[] parameters) throws Exception {
-    //     Object o = null;
+    public Object invoke(Object[] parameters) throws Exception {
+        Object o = null;
         
-    //     Class<?> clazz = Class.forName(this.className);
-    //     Object ins = clazz.getConstructor().newInstance();
-    //     Class<?>[] types = null;
-    //     if (parameters != null) {
-    //         types = this.getTypes();
-    //     }
-    //     Method m = clazz.getMethod(this.methodName, types);
-    //     o = m.invoke(ins, parameters);
+        Class<?> clazz = Class.forName(this.className);
+        Object ins = clazz.getConstructor().newInstance();
+        Class<?>[] types = null;
+        if (parameters != null) {
+            types = this.getTypes();
+        }
+        Method m = clazz.getMethod(this.methodName, types);
+        o = m.invoke(ins, parameters);
 
-    //     return o;
-    // }
+        return o;
+    }
+    public Class<?> getReturnType() throws Exception {
+        Class<?> clazz = null;
+
+        try {
+            Method m = Class.forName(this.getClassName()).getDeclaredMethod(this.getMethodName(), this.getTypes());
+            clazz = m.getReturnType();
+        } catch (Exception e) {
+            throw e;
+        } 
+
+        return clazz;
+    }
+
     public Object invoke(String[] parameters) throws Exception {
         Object o = null;
         

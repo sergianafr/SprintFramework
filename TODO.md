@@ -93,9 +93,19 @@ Recuperer des données d'un formulaire et l'envoyer dans la fonction a l'action 
     - [x] Recuperation des valeurs passés par la requete à partir des noms des arguments
 ##### Partie 2:
 - [x] Creation annotation @param(name="")
-- [ ] Si le paramètre dans la requete HTTP au nom de l'argument n'existe pas, on check l'annotation @param:
-    - [ ] Si il existe: on recupere le name correspondant a l'annotation de l'argument
-    - [ ] Sinon, on retourne null
+- [x] Si le paramètre dans la requete HTTP au nom de l'argument n'existe pas, on check l'annotation @param:
+    - [x] Si il existe: on recupere le name correspondant a l'annotation de l'argument
+    - [x] Sinon, on retourne null
 #### Test:
-- [ ] Creation méthode retournant ModelView qui prend en paramètre des arguments provenant d'un formulaire
+- [x] Creation méthode retournant ModelView qui prend en paramètre des arguments provenant d'un formulaire
+
+## Sprint-7
+### But:
+Invoquer une methode ayant un object comme argument a partir d'un form
+
+#### Framework:
+- [] Verification des parameters dans la methodes
+    - [] Si de type primitif: on recupere directement 
+    - [] Sinon, on recupere chaque attribut de l'objet et recupere un par un dans la requete
+    
 
