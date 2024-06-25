@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -62,26 +64,26 @@ public class FrontController extends HttpServlet {
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
                 Mapping m = urlMapping.get(urlToSearch);
-                Parameter[] params = null;
-                String[] args = null;
+                Parameter[] params = m.getParameters();
+                String[] args = this.getStringMethodArgs(params, req);
 
-                if(m.getParameters() != null) {
-                    System.out.println(m.getParameters());
+                // if(m.getParameters() != null) {
+                //     System.out.println(m.getParameters());
 
-                    // Retrieve the parameters of the method from the request first 
-                    params = m.getParameters();
-                    args = new String[params.length];
-                    int i = 0;
-                    for (Parameter param : params) {
-                        String paramString = req.getParameter(param.getName());
-                        if(paramString != null){
-                            args[i] = req.getParameter(param.getName());
-                        } else {
-                            String paramName = param.getAnnotation(Param.class).name();
-                            args[i] = req.getParameter(paramName);
-                        }
-                    }
-                }
+                //     // Retrieve the parameters of the method from the request first 
+                //     params = m.getParameters();
+                //     args = new String[params.length];
+                //     int i = 0;
+                //     for (Parameter param : params) {
+                //         String paramString = req.getParameter(param.getName());
+                //         if(paramString != null){
+                //             args[i] = req.getParameter(param.getName());
+                //         } else {
+                //             String paramName = param.getAnnotation(Param.class).name();
+                //             args[i] = req.getParameter(paramName);
+                //         }
+                //     }
+                // }
                 
                 // Invoking the method 
                 Object result = m.invoke(args);
@@ -108,8 +110,57 @@ public class FrontController extends HttpServlet {
         }
     }
 
+    protected Object[] getMethodArgs(Parameter[] params, HttpServletRequest req) throws Exception{
+        try {
+            if(params != null){
+                Object[] args = new Object[params.length];
+                int i = 0;
+                for (Parameter param : params) {
+                    if(!param.getType().isPrimitive()){
+                        Class parameterType = param.getType();
+                        String name = param.getName();
+                        Vector<Object> attr = new Vector<Object>();
+                        for(Field field : parameterType.getDeclaredFields()){
+                            attr.add(req.getParameter(name+"."+field.getName()));
+                        }
+                        Constructor cons = parameterType.getConstructor(null);
+                        Object obj = cons.newInstance(null);
+                    }
+                }
+            }
+        } catch (Exception e) {
+           throw e;
+        }
+        return null;
+    }
+
+    proc
+
+    // protected void settingAttribute(Class classe, Object obj){
+    //     for(Field field : classe.getDeclaredFields()){
+    //         String setter = 
+    //         Method m = classe.getMethod("set"+fi);
+    //     }
+    // }
+
     
-    
+    protected String[] getStringMethodArgs(Parameter[] params, HttpServletRequest req){
+        if(params != null){
+            String[] methodArgs = new String[params.length];
+            int i = 0;
+            for (Parameter param : params) {
+                String paramString = req.getParameter(param.getName());
+                if(paramString != null){
+                    methodArgs[i] = req.getParameter(param.getName());
+                } else {
+                    String paramName = param.getAnnotation(Param.class).name();
+                    methodArgs[i] = req.getParameter(paramName);
+                }
+            }
+            return methodArgs;
+        }
+        return null;
+    }
 
     public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
         List<Class<?>> classes = new ArrayList<>();
