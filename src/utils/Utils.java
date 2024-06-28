@@ -2,6 +2,9 @@ package src.utils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+
+import src.annotations.Param;
 
 public class Utils {
     public static Method setter(Field f, Class<?> clazz) throws NoSuchMethodException {
@@ -19,6 +22,23 @@ public class Utils {
         return m;
     }
 
+    public static boolean checkParameters(Parameter[] params){
+        for(Parameter p : params){
+            if(!p.isAnnotationPresent(Param.class)){
+                return false;
+            }
+        }
+        return true;
+    }
+    public static boolean checkParameters(Method m) throws Exception{
+        Parameter[] params = m.getParameters();
+        for(Parameter p : params){
+            if(!p.isAnnotationPresent(Param.class)){
+                return false;
+            }
+        }
+        return true;
+    }
     public static Object convert(String value, Class<?> goalClass) {
         if(value == null) {
             return null;

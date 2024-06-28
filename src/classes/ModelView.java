@@ -6,6 +6,7 @@ public class ModelView {
     public String url;
     public HashMap<String, Object> data = new HashMap<>();
     
+    
     public HashMap<String, Object> getData() {
         return data;
     }public String getUrl() {

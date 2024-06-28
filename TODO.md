@@ -1,7 +1,7 @@
 ## Sprint-0
 ### But:
     Afficher url
-
+### Framework
 - [x] Creation working dir
 - [x] Creation projet test
 - [x] Creation script pour transformer en jar
@@ -10,6 +10,7 @@
 - [x] Creation FronController
     - Creation servlet de frontController 
     - Recuperation url 
+### Test
 - [x] Configuration web.xml projet test
     - Creation balise servlet
     - Mapping vers '/'
@@ -104,8 +105,26 @@ Recuperer des données d'un formulaire et l'envoyer dans la fonction a l'action 
 Invoquer une methode ayant un object comme argument a partir d'un form
 
 #### Framework:
-- [] Verification des parameters dans la methodes
-    - [] Si de type primitif: on recupere directement 
-    - [] Sinon, on recupere chaque attribut de l'objet et recupere un par un dans la requete
-    
+- [x] Verification des parameters dans la methodes
+    - [x] Si de type primitif: on recupere directement 
+    - [x] Sinon, on recupere chaque attribut de l'objet et recupere un par un dans la requete
+
+## Sprint-8
+### But:
+Créer des sessions a partir de controllers
+#### Framework:
+- [] Création classe CustomSession: 
+    - [] attribut private HashMap<string, object> values
+    - [] methodes:
+        - [] public get()
+        - [] public add()
+        - [] public remove()
+        - [] public update()
+- [] Ajout conditions dans la vérification des méthodes dans les controllers:
+    - [] Ajout Exception si un paramètre n'est pas annoté et pas de type CustomSession
+- [] Creation methode HttpSessionToCustomSession: recupère les values du session et les store dans le values d'un CustomSession
+- [] Creation methode CustomSessionToHttpSession: Transforme les valeurs du customSession en HttpSession
+
+#### Test:
+- [] Creation methode contenant CustomSession
 

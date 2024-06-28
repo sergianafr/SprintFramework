@@ -55,7 +55,7 @@ public class FrontController extends HttpServlet {
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
         try {
-            // getting the URL requested
+            // getting the URL requested 
             String requestedURL = req.getRequestURL().toString();
             String[] partedReq = requestedURL.split("/");
             String urlToSearch = partedReq[partedReq.length - 1];  
@@ -64,6 +64,7 @@ public class FrontController extends HttpServlet {
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
                 Mapping m = urlMapping.get(urlToSearch);
+                m.checkParam();
                 Object[] args = this.findParams(req, m);
                 Object result = m.invoke(args);
                 Class<?> retour = m.getReturnType();
@@ -82,14 +83,15 @@ public class FrontController extends HttpServlet {
 
                 
             } else {
-                out.println("No method matching '" + urlToSearch );
+                out.println("The method requested is not found : '" + urlToSearch );
             }
             
             out.flush();
             out.close();
         } catch (Exception e) {
             e.printStackTrace();
-            out.println(e.getMessage()+"   exccc");
+            
+            out.println(e.getMessage());
         }
     }
 
@@ -100,53 +102,54 @@ public class FrontController extends HttpServlet {
         Method m = clazz.getMethod(method.getMethodName(), method.getTypes());
 
         try {
-    
-            for (int i = 0; i < method.getParameters().length; i++) {
-                Parameter p = method.getParameters()[i];
-                Object o = null;
-                String key = "";
-    
-                if(p.isAnnotationPresent(Param.class)) {
-                    Param annotationParam = (Param) p.getAnnotation(Param.class);
-                    key = annotationParam.name();
-                } else {
-                    key = p.getName();
-                }
-    
-                Class<?> paramType = p.getType();
-                if(!paramType.isPrimitive() && paramType != String.class) {
-                    
-                    Constructor c = paramType.getDeclaredConstructor();
-                    o = c.newInstance();
-    
-                   
-                    Field[] attributes = paramType.getDeclaredFields();
-                    for (Field attr : attributes) {
-                        try {
-                            String attrKey = key + ".";
-                            if(attr.isAnnotationPresent(src.annotations.Field.class)) {
-                                
-                                src.annotations.Field f = attr.getAnnotation(src.annotations.Field.class);
-                                attrKey += f.name();
-                            } else {
-                                attrKey += attr.getName();
-                            }
 
-                            String attrValStr = req.getParameter(attrKey);
-
-                            Method setter = Utils.setter(attr, paramType);
-                            setter.invoke(o, Utils.convert(attrValStr, attr.getType()));
-                        } catch (Exception e) {
-                            throw e;
-                        }
+                for (int i = 0; i < method.getParameters().length; i++) {
+                    Parameter p = method.getParameters()[i];
+                    Object o = null;
+                    String key = "";
+        
+                    if(p.isAnnotationPresent(Param.class)) {
+                        Param annotationParam = (Param) p.getAnnotation(Param.class);
+                        key = annotationParam.name();
+                    } else {
+                        key = p.getName();
                     }
-                } else {
-                    String valueStr = req.getParameter(key);
-                    o = Utils.convert(valueStr, paramType);
+        
+                    Class<?> paramType = p.getType();
+                    if(!paramType.isPrimitive() && paramType != String.class) {
+                        
+                        Constructor c = paramType.getDeclaredConstructor();
+                        o = c.newInstance();
+        
+                       
+                        Field[] attributes = paramType.getDeclaredFields();
+                        for (Field attr : attributes) {
+                            try {
+                                String attrKey = key + ".";
+                                if(attr.isAnnotationPresent(src.annotations.Field.class)) {
+                                    
+                                    src.annotations.Field f = attr.getAnnotation(src.annotations.Field.class);
+                                    attrKey += f.name();
+                                } else {
+                                    attrKey += attr.getName();
+                                }
+    
+                                String attrValStr = req.getParameter(attrKey);
+    
+                                Method setter = Utils.setter(attr, paramType);
+                                setter.invoke(o, Utils.convert(attrValStr, attr.getType()));
+                            } catch (Exception e) {
+                                throw e;
+                            }
+                        }
+                    } else {
+                        String valueStr = req.getParameter(key);
+                        o = Utils.convert(valueStr, paramType);
+                    }
+                    
+                    args.add(o);
                 }
-                
-                args.add(o);
-            }
+    
         } catch (Exception e) {
             throw e;
         }

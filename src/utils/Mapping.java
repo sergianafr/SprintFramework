@@ -3,6 +3,8 @@ package src.utils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
+import src.annotations.Param;
+
 public class Mapping {
     String className;
     String methodName;
@@ -77,19 +79,38 @@ public class Mapping {
         return o;
     }
 
+    public void checkParam() throws Exception {
+        for(Parameter p : this.parameters){
+            if(!p.isAnnotationPresent(Param.class)){
+                throw new Exception("ETU 002610 param not annotated");
+            }
+        }
+    }
     public String getClassName() {
         return className;
-    }public String getMethodName() {
+    }
+    public String getMethodName() {
         return methodName;
-    }public Parameter[] getParameters() {
+    }
+    public Parameter[] getParameters() {
         return parameters;
-    }public void setClassName(String className) {
+    }
+    public void setClassName(String className) {
         this.className = className;
-    }public void setMethodName(String methodName) {
+    }
+    public void setMethodName(String methodName) {
         this.methodName = methodName;
-    }public void setParameters(Parameter[] parameters) {
+    }
+    public void setParameters(Parameter[] parameters) {
         this.parameters = parameters;
     }
+    // public void setParameters(Parameter[] parameters) throws Exception {
+    //     if(Utils.checkParameters(parameters)){
+    //         this.parameters = parameters;
+    //     } else{
+    //         throw new IllegalArgumentException("ETU002610 // Les parametres de la methode doivent etre annotés");
+    //     }
+    // }
 
 
 }
