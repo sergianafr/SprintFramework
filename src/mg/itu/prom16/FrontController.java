@@ -22,6 +22,7 @@ import java.util.Vector;
 import javax.naming.directory.InvalidAttributesException;
 
 import src.annotations.*;
+import src.classes.CustomSession;
 import src.classes.ModelView;
 import src.utils.*;
 import jakarta.servlet.ServletException;
@@ -77,11 +78,10 @@ public class FrontController extends HttpServlet {
 
                     RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
                     dispatcher.forward(req, resp);
-                } else {
+                }else {
                     throw new ServletException("The return type is not supported.");
                 }
 
-                
             } else {
                 out.println("The method requested is not found : '" + urlToSearch );
             }
@@ -111,12 +111,18 @@ public class FrontController extends HttpServlet {
                     if(p.isAnnotationPresent(Param.class)) {
                         Param annotationParam = (Param) p.getAnnotation(Param.class);
                         key = annotationParam.name();
-                    } else {
-                        key = p.getName();
                     }
+                    // Alea fitsarana 1: toutes les  parametres doivent être annotées
+                    // } else {
+                    //     key = p.getName();
+                    // }
         
                     Class<?> paramType = p.getType();
-                    if(!paramType.isPrimitive() && paramType != String.class) {
+                    if(paramType == CustomSession.class) {
+                        CustomSession customSession = new CustomSession(req.getSession());
+                        o = customSession;
+                    }
+                    else if(!paramType.isPrimitive() && paramType != String.class && paramType != CustomSession.class)  {
                         
                         Constructor c = paramType.getDeclaredConstructor();
                         o = c.newInstance();

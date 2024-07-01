@@ -113,13 +113,13 @@ Invoquer une methode ayant un object comme argument a partir d'un form
 ### But:
 Créer des sessions a partir de controllers
 #### Framework:
-- [] Création classe CustomSession: 
-    - [] attribut private HashMap<string, object> values
-    - [] methodes:
-        - [] public get()
-        - [] public add()
-        - [] public remove()
-        - [] public update()
+- [x] Création classe CustomSession: 
+    - [x] attribut private HashMap<string, object> values
+    - [x] methodes:
+        - [x] public get()
+        - [x] public add()
+        - [x] public remove()
+        - [x] public update()
 - [] Ajout conditions dans la vérification des méthodes dans les controllers:
     - [] Ajout Exception si un paramètre n'est pas annoté et pas de type CustomSession
 - [] Creation methode HttpSessionToCustomSession: recupère les values du session et les store dans le values d'un CustomSession

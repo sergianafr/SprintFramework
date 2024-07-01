@@ -3,8 +3,12 @@ package src.utils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Enumeration;
+import java.util.HashMap;
 
+import jakarta.servlet.http.HttpSession;
 import src.annotations.Param;
+import src.classes.CustomSession;
 
 public class Utils {
     public static Method setter(Field f, Class<?> clazz) throws NoSuchMethodException {
@@ -33,12 +37,34 @@ public class Utils {
     public static boolean checkParameters(Method m) throws Exception{
         Parameter[] params = m.getParameters();
         for(Parameter p : params){
-            if(!p.isAnnotationPresent(Param.class)){
+            if(!p.isAnnotationPresent(Param.class) && p.getType() != CustomSession.class){
                 return false;
             }
         }
         return true;
     }
+
+    public static void emptySession(HttpSession session) {
+
+        // Retrieving the values of the session
+        Enumeration<String> keys = session.getAttributeNames();
+        while (keys.hasMoreElements()) {
+            session.removeAttribute(keys.nextElement());
+        }
+    }
+    public static HashMap<String, Object> getSessionValues(HttpSession session) {
+        HashMap<String, Object> values = new HashMap<String, Object>();
+
+        // Retrieving the values of the session
+        Enumeration<String> keys = session.getAttributeNames();
+        while (keys.hasMoreElements()) {
+            String key = keys.nextElement();
+            values.put(key, session.getAttribute(key));
+        }
+
+        return values;
+    }
+
     public static Object convert(String value, Class<?> goalClass) {
         if(value == null) {
             return null;
