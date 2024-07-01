@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 import src.annotations.Param;
+import src.classes.CustomSession;
 
 public class Mapping {
     String className;
@@ -81,7 +82,7 @@ public class Mapping {
 
     public void checkParam() throws Exception {
         for(Parameter p : this.parameters){
-            if(!p.isAnnotationPresent(Param.class)){
+            if(!p.isAnnotationPresent(Param.class) && p.getType() != CustomSession.class){
                 throw new Exception("ETU 002610 param not annotated");
             }
         }
