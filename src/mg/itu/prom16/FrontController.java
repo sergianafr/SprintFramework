@@ -113,6 +113,7 @@ public class FrontController extends HttpServlet {
                         key = annotationParam.name();
                     }
                     // Alea fitsarana 1: toutes les  parametres doivent être annotées
+                    
                     // } else {
                     //     key = p.getName();
                     // }
@@ -237,6 +238,8 @@ public class FrontController extends HttpServlet {
                 // checking the controller class
                 if(classe.isAnnotationPresent(Controller.class)) {
                     controllers.add(classe.getName());
+
+                    
                     
                     // Getting the methods annotated with get
                     Method[] allMethods = classe.getMethods();
