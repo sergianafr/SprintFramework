@@ -14,7 +14,8 @@ public class ModelView {
     } 
     public void setData(HashMap<String, Object> data) {
         this.data = data;
-    }public void setUrl(String url) {
+    }
+    public void setUrl(String url) {
         this.url = url;
     }
     public void addObject(String nom, Object object) {

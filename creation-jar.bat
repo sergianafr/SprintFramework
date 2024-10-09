@@ -1,5 +1,7 @@
 @echo off
-set "work_dir=C:\Users\SERGIANA\Documents\Study\S4\Mr-Naina\SprintFramework"
+setlocal enabledelayedexpansion
+
+set "work_dir=C:\Users\SERGIANA\Documents\Study\L2\S4\Mr-Naina\SprintFramework"
 set "temp=%work_dir%\temp"
 set "src=%work_dir%\src"
 set "lib=%work_dir%\lib"
@@ -16,10 +18,21 @@ dir /s /B "%src%\*.java" > sources.txt
 dir /s /B "%lib%\*.jar" > libs.txt
 :: Construire le classpath
 set "classpath="
-for /F "delims=" %%i in (libs.txt) do set "classpath=%%i"
-@REM echo "%classpath%"
-:: Exécuter la commande javac
-javac -d "%temp%" -cp "%classpath%" @sources.txt
+
+:: Boucle pour ajouter chaque ligne de libs.txt à la variable classpath
+for /F "delims=" %%i in (libs.txt) do (
+    if defined classpath (
+        set "classpath=!classpath!;%%i"
+    ) else (
+        set "classpath=%%i"
+    )
+)
+
+:: Afficher le classpath pour vérification
+echo !classpath!
+
+:: Exécuter la commande javac avec le classpath
+javac -d "%temp%" -cp "!classpath!" @sources.txt
 
 del sources.txt
 del libs.txt
