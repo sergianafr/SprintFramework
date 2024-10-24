@@ -52,6 +52,42 @@ public class FrontController extends HttpServlet {
      */
 
     
+     public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
+        try {
+            PrintWriter out = resp.getWriter();
+            if (mappingMethod.isAnnotationPresent(Restapi.class)){     
+                Gson gson = new Gson();
+                
+                // Retrieving the json value of the object returned by the method
+                if(retour == ModelView.class) {
+                    // System.out.println(gson.toJson(((ModelView)result).getData()));
+                    out.print(gson.toJson(((ModelView)result).getData()));
+                    out.flush();
+                }else {
+                    System.out.print(gson.toJson(result));
+                    out.print(gson.toJson(result));       
+                    out.flush();          
+                }
+                resp.setContentType("text/json");
+                resp.setCharacterEncoding("UTF-8");
+            }
+
+            if(retour == String.class) {
+                out.println((String) result);
+            } else if(retour == ModelView.class) {
+                ModelView mv = (ModelView) result;
+                req.setAttribute("attribut", mv.getData());
+
+                RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
+                dispatcher.forward(req, resp);
+            }else {
+                throw new ServletException("The return type is not supported.");
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
+     }
     
      public void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
@@ -69,8 +105,8 @@ public class FrontController extends HttpServlet {
                 Mapping m = urlMapping.get(urlToSearch);
                 // checking if all the parameters are annotated
                 m.checkParam();
-                Object[] args = this.findParams(req, m);
 
+                Object[] args = this.findParams(req, m);
                 Object result = m.invoke(args);
                 Class<?> retour = m.getReturnType();
 
@@ -78,41 +114,14 @@ public class FrontController extends HttpServlet {
                 Method mappingMethod = mappingClass.getDeclaredMethod(m.getMethodName(), m.getTypes());
                 
                 if (mappingMethod == null) {
-                    throw new ServletException("Tsy nuuuuuullll");
+                    throw new ServletException("Method does not exist ");
                 } 
-                
-                // Checking if the method is annotated with restapi 
-                if (mappingMethod.isAnnotationPresent(Restapi.class)){
 
-                    
-                    Gson gson = new Gson();
-                    
-                    // Retrieving the json value of the object returned by the method
-                    if(retour == ModelView.class) {
-                        // System.out.println(gson.toJson(((ModelView)result).getData()));
-                        out.print(gson.toJson(((ModelView)result).getData()));
-                    }else {
-                        System.out.print(gson.toJson(result));
-                        out.print(gson.toJson(result));                 
-                    }
-                    resp.setContentType("text/json");
-                    resp.setCharacterEncoding("UTF-8");
-                }
-
-                if(retour == String.class) {
-                    out.println((String) result);
-                } else if(retour == ModelView.class) {
-                    ModelView mv = (ModelView) result;
-                    req.setAttribute("attribut", mv.getData());
-
-                    RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
-                    dispatcher.forward(req, resp);
-                }else {
-                    throw new ServletException("The return type is not supported.");
-                }
+                checkOutput(req, resp, mappingMethod, retour, result);                
 
             } else {
                 out.println("The method requested is not found : '" + urlToSearch );
+                out.flush();
             }
             
             out.flush();

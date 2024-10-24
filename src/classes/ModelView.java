@@ -21,4 +21,5 @@ public class ModelView {
     public void addObject(String nom, Object object) {
         this.data.put(nom, object);
     }
+
 }
