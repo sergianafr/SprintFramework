@@ -2,7 +2,7 @@ package src.classes;
 
 import java.util.HashMap;
 
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpSession;
 
 public class CustomSession {
     private HashMap<String, Object> values;

@@ -6,7 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import jakarta.servlet.ServletContext; 
+import javax.servlet.ServletContext; 
 public class PackageScanner {
     
     public static List<Class<?>> getClasses(String packageName, ServletContext context) throws ClassNotFoundException, IOException {

@@ -31,6 +31,7 @@ Tomcat version: Tomcat 10.1
 - Annotate your controller methods with src.annotations.Get(url="method's url").
 - Annotate the parameters of your controllers methods with src.annotations.Param(name="Parameter name"). The name should correspond to the name of the form input where you retrieve it.
 
+
 ## Session
 To manipulate sessions, you must import the package src.classes.CustomSession
     Method void add(String name, Object value) adds value to the session
