@@ -102,7 +102,7 @@ Recuperer des données d'un formulaire et l'envoyer dans la fonction a l'action 
 
 ## Sprint-7
 ### But:
-Invoquer une methode ayant un object comme argument a partir d'un form  
+Invoquer une methode ayant un object comme argument a partir d'un form
 
 #### Framework:
 - [x] Verification des parameters dans la methodes
@@ -127,16 +127,4 @@ Créer des sessions a partir de controllers
 
 #### Test:
 - [] Creation methode contenant CustomSession
-
-## Sprint-9
-### But: 
-Exposer les actions du controleur en REST API, retourner un json
-#### Framework:
-- [x] Creer classe annotation (RestApi)
-- [x] Verifier si l'annotation existe dans frontservlet
-    - [x] Recuperer la valeur de retour de la methode 
-        - [x] Si autre que modelview: transformer en json directement
-        - [x] Si ModelView, transformer en json l'attribut data
-    - [x] Ne plus utiliser dispatch forwarrd si l'annotation existe mais getWriter()
-    - [x] changer le response type
 

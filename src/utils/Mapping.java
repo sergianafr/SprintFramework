@@ -36,7 +36,7 @@ public class Mapping {
 
         o = m.invoke(ins, null);
 
-        return o; 
+        return o;
     }
     public Object invoke(Object[] parameters) throws Exception {
         Object o = null;

@@ -4,21 +4,20 @@
  */
 package src.mg.itu.prom16;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field; 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
-import com.google.gson.Gson;
 
 import javax.naming.directory.InvalidAttributesException;
 
@@ -28,11 +27,11 @@ import src.classes.ModelView;
 import src.annotations.Param;
 import src.utils.VerbMethod;
 import src.utils.*;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /**
  *
@@ -53,6 +52,7 @@ public class FrontController extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
 
+<<<<<<< HEAD
      
      public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
         try {
@@ -90,9 +90,11 @@ public class FrontController extends HttpServlet {
             e.printStackTrace();
         }
      }
+=======
+    
+>>>>>>> parent of 0d553cc (Merge pull request #9 from sergianafr/Sprint9-2610)
     
      public void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
         try {
@@ -100,30 +102,37 @@ public class FrontController extends HttpServlet {
             String requestedURL = req.getRequestURL().toString();
             String[] partedReq = requestedURL.split("/");
             String urlToSearch = partedReq[partedReq.length - 1];  
-            System.out.println(requestedURL+"ggggggg");  
+            System.out.println(requestedURL);  
 
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
+<<<<<<< HEAD
                 VerbMethod m = urlMapping.get(urlToSearch);
                 // checking if all the parameters are annotated
                 // m.checkParam();
                 Method mVerbMethod = m.values().iterator().next();
+=======
+                Mapping m = urlMapping.get(urlToSearch);
+                m.checkParam();
+>>>>>>> parent of 0d553cc (Merge pull request #9 from sergianafr/Sprint9-2610)
                 Object[] args = this.findParams(req, m);
                 Object result = m.keySet().invoke(args);
                 Class<?> retour = m.getReturnType();
 
-                Class mappingClass = Class.forName(m.getClassName());
-                Method mappingMethod = mappingClass.getDeclaredMethod(m.getMethodName(), m.getTypes());
-                
-                if (mappingMethod == null) {
-                    throw new ServletException("Method does not exist ");
-                } 
+                if(retour == String.class) {
+                    out.println((String) result);
+                } else if(retour == ModelView.class) {
+                    ModelView mv = (ModelView) result;
+                    req.setAttribute("attribut", mv.getData());
 
-                checkOutput(req, resp, mappingMethod, retour, result);                
+                    RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
+                    dispatcher.forward(req, resp);
+                }else {
+                    throw new ServletException("The return type is not supported.");
+                }
 
             } else {
                 out.println("The method requested is not found : '" + urlToSearch );
-                out.flush();
             }
             
             out.flush();
@@ -232,8 +241,6 @@ public class FrontController extends HttpServlet {
         return null;
     }
 
-    // getting all the classes in the given package 
-
     public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
         List<Class<?>> classes = new ArrayList<>();
 
@@ -305,7 +312,6 @@ public class FrontController extends HttpServlet {
                     }
                 }
             }
-
             // setting the values of the attributes
             this.listControllers = controllers;
             this.urlMapping = urls;
