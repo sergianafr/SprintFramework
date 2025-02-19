@@ -1,4 +1,4 @@
-package src.classes;
+package src.mg.itu.prom16.classes;
 
 import java.util.HashMap;
 

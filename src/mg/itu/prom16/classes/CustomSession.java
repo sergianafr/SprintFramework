@@ -1,4 +1,4 @@
-package src.classes;
+package src.mg.itu.prom16.classes;
 
 import java.util.HashMap;
 
@@ -28,7 +28,7 @@ public class CustomSession {
     
 
     public void castToHttpSession(HttpSession session) throws Exception{
-        src.utils.Utils.emptySession(session);
+        src.mg.itu.prom16.utils.Utils.emptySession(session);
         for (String key : this.values.keySet()) {
             session.setAttribute(key, this.values.get(key));
         }
@@ -41,7 +41,7 @@ public class CustomSession {
     }
 
     public static CustomSession castToCustomSession(HttpSession session){
-        HashMap<String, Object> values = src.utils.Utils.getSessionValues(session);
+        HashMap<String, Object> values = src.mg.itu.prom16.utils.Utils.getSessionValues(session);
         CustomSession cs = new CustomSession();
         for (String key : values.keySet()) {
             cs.add(key, values.get(key));

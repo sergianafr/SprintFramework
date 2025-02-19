@@ -22,10 +22,13 @@ import com.google.gson.Gson;
 
 import javax.naming.directory.InvalidAttributesException;
 
-import src.annotations.*;
-import src.classes.CustomSession;
-import src.classes.ModelView;
-import src.utils.*;
+import src.mg.itu.prom16.annotations.*;
+import src.mg.itu.prom16.classes.CustomSession;
+import src.mg.itu.prom16.classes.ModelView;
+import src.mg.itu.prom16.exceptions.ReturnTypeException;
+import src.mg.itu.prom16.mapping.Mapping;
+import src.mg.itu.prom16.utils.*;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -70,19 +73,20 @@ public class FrontController extends HttpServlet {
                 }
                 resp.setContentType("text/json");
                 resp.setCharacterEncoding("UTF-8");
+            } else {
+                if(retour == String.class) {
+                    out.println((String) result);
+                } else if(retour == ModelView.class) {
+                    ModelView mv = (ModelView) result;
+                    req.setAttribute("attribut", mv.getData());
+    
+                    RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
+                    dispatcher.forward(req, resp);
+                }else {
+                    throw new ReturnTypeException("The return type is not supported.");
+                }
             }
 
-            if(retour == String.class) {
-                out.println((String) result);
-            } else if(retour == ModelView.class) {
-                ModelView mv = (ModelView) result;
-                req.setAttribute("attribut", mv.getData());
-
-                RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
-                dispatcher.forward(req, resp);
-            }else {
-                throw new ServletException("The return type is not supported.");
-            }
         } catch (Exception e) {
             // TODO: handle exception
             e.printStackTrace();
@@ -171,9 +175,9 @@ public class FrontController extends HttpServlet {
                         for (Field attr : attributes) {
                             try {
                                 String attrKey = key + ".";
-                                if(attr.isAnnotationPresent(src.annotations.Field.class)) {
+                                if(attr.isAnnotationPresent(src.mg.itu.prom16.annotations.Field.class)) {
                                     
-                                    src.annotations.Field f = attr.getAnnotation(src.annotations.Field.class);
+                                    src.mg.itu.prom16.annotations.Field f = attr.getAnnotation(src.mg.itu.prom16.annotations.Field.class);
                                     attrKey += f.name();
                                 } else {
                                     attrKey += attr.getName();
@@ -229,31 +233,31 @@ public class FrontController extends HttpServlet {
 
     // getting all the classes in the given package 
 
-    public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
-        List<Class<?>> classes = new ArrayList<>();
+    // public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
+    //     List<Class<?>> classes = new ArrayList<>();
 
         
-        String path = "WEB-INF/classes/" + packageName.replace(".", "/");
-        String realPath = getServletContext().getRealPath(path);
+    //     String path = "WEB-INF/classes/" + packageName.replace(".", "/");
+    //     String realPath = getServletContext().getRealPath(path);
 
-        File directory = new File(realPath);
-        File[] files = directory.listFiles();
-        if(!directory.exists()){
-            throw new InvalidAttributesException("The package "+packageName+" does not exist.");
-        }
-        else if(files.length <= 0){
-            throw new InvalidAttributesException("The package "+packageName+" is empty.");
-        } 
-        for(File f : files) {
-            // filtering class files
-            if(f.isFile() && f.getName().endsWith(".class")) {
-                String className = packageName + "." + f.getName().split(".class")[0];
-                classes.add(Class.forName(className));
-            }
-        }
+    //     File directory = new File(realPath);
+    //     File[] files = directory.listFiles();
+    //     if(!directory.exists()){
+    //         throw new InvalidAttributesException("The package "+packageName+" does not exist.");
+    //     }
+    //     else if(files.length <= 0){
+    //         throw new InvalidAttributesException("The package "+packageName+" is empty.");
+    //     } 
+    //     for(File f : files) {
+    //         // filtering class files
+    //         if(f.isFile() && f.getName().endsWith(".class")) {
+    //             String className = packageName + "." + f.getName().split(".class")[0];
+    //             classes.add(Class.forName(className));
+    //         }
+    //     }
 
-        return classes;
-    }
+    //     return classes;
+    // }
 
     
     @Override
@@ -263,42 +267,13 @@ public class FrontController extends HttpServlet {
         ServletContext context = getServletContext();
         String packageName = context.getInitParameter("Controllers");
 
-        List<String> controllers = listControllers;
-        controllers = new ArrayList<>(); 
-
-        HashMap<String, Mapping> urls = urlMapping;
-        urls = new HashMap<>(); 
+        // Getting the real path of the package containing the controllers
+        String path = "WEB-INF/classes/" + packageName.replace(".", "/");
+        String realPath = getServletContext().getRealPath(path);
         
         try {
-
-           
-            List<Class<?>> allClasses = this.findClasses(packageName);
-
-            for (Class<?> classe : allClasses) {
-                // checking the controller class
-                if(classe.isAnnotationPresent(Controller.class)) {
-                    controllers.add(classe.getName());
-
-                    
-                    
-                    // Getting the methods annotated with get
-                    Method[] allMethods = classe.getMethods();
-                    for (Method m : allMethods) {
-                        if (m.isAnnotationPresent(Get.class)) {
-                            Get mGetAnnotation = (Get) m.getAnnotation(Get.class);
-                            if(urls.containsKey(mGetAnnotation.url())){
-                                throw new InvalidAttributesException("The url "+mGetAnnotation.url()+" is duplicated.");
-                            }
-                            // storing the url and the method Mapping matching to it in the map
-                            urls.put(mGetAnnotation.url(), new Mapping(classe.getName(), m.getName(), m.getParameters()));
-                        }
-                    }
-                }
-            }
-
-            // setting the values of the attributes
-            this.listControllers = controllers;
-            this.urlMapping = urls;
+            List<Class<?>> allClasses = PackageScanner.findControllerClasses(packageName, realPath);
+            this.urlMapping = PackageScanner.getMapping(allClasses);
         } catch (Exception e) {
             throw new ServletException(e.getMessage());
         }

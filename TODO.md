@@ -140,3 +140,15 @@ Exposer les actions du controleur en REST API, retourner un json
     - [x] Ne plus utiliser dispatch forwarrd si l'annotation existe mais getWriter()
     - [x] changer le response type
 
+## Sprint-10
+### But:
+Ajout de methode post 
+#### Framework:
+    - [x] Creer une annotation post
+    - [x] Creer annotation endpoint pour marquer les methodes endpoint
+    - [x] Creation enum POST et GET a mettre dans key de VerbMethod 
+    - [] Remplacer l'attribut methodName par un VerbMethod
+        - [] Adapter la fonction invoke au changement
+        - [x] modifier la fonction init dans frontcontroller
+    - 
+
