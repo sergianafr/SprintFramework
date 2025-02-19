@@ -5,7 +5,7 @@ import java.lang.reflect.Parameter;
 
 import src.annotations.Param;
 import src.classes.CustomSession;
-
+ 
 public class Mapping {
     String className;
     String methodName;

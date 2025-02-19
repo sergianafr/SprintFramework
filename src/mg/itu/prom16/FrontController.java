@@ -25,6 +25,8 @@ import javax.naming.directory.InvalidAttributesException;
 import src.annotations.*;
 import src.classes.CustomSession;
 import src.classes.ModelView;
+import src.annotations.Param;
+import src.utils.VerbMethod;
 import src.utils.*;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -38,8 +40,8 @@ import javax.servlet.http.HttpSession;
  */
 public class FrontController extends HttpServlet {
     private List<String> listControllers;
-    protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
-
+    // protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
+    protected HashMap<String, VerbMethod> urlMapping;
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -51,7 +53,7 @@ public class FrontController extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
 
-    
+     
      public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
         try {
             PrintWriter out = resp.getWriter();
@@ -102,12 +104,12 @@ public class FrontController extends HttpServlet {
 
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
-                Mapping m = urlMapping.get(urlToSearch);
+                VerbMethod m = urlMapping.get(urlToSearch);
                 // checking if all the parameters are annotated
-                m.checkParam();
-
+                // m.checkParam();
+                Method mVerbMethod = m.values().iterator().next();
                 Object[] args = this.findParams(req, m);
-                Object result = m.invoke(args);
+                Object result = m.keySet().invoke(args);
                 Class<?> retour = m.getReturnType();
 
                 Class mappingClass = Class.forName(m.getClassName());
@@ -132,17 +134,20 @@ public class FrontController extends HttpServlet {
             out.println(e.getMessage());
         }
     }
+    
 
-    public Object[] findParams(HttpServletRequest req, Mapping method) throws Exception {
+    public Object[] findParams(HttpServletRequest req, VerbMethod method) throws Exception {
         List<Object> args = new ArrayList<>();
 
-        Class<?> clazz = Class.forName(method.getClassName());
-        Method m = clazz.getMethod(method.getMethodName(), method.getTypes());
+        // Class<?> clazz = Class.forName(method.getClassName());
+        // Method m = clazz.getMethod(method.getMethodName(), method.getTypes());
+    
 
         try {
-
-                for (int i = 0; i < method.getParameters().length; i++) {
-                    Parameter p = method.getParameters()[i];
+                // retrieve the method from verbMethod
+                Method mVerbMethod = method.values().iterator().next();
+                for (int i = 0; i < mVerbMethod.getParameters().length; i++) {
+                    Parameter p = mVerbMethod.getParameters()[i];
                     Object o = null;
                     String key = "";
         
@@ -157,11 +162,11 @@ public class FrontController extends HttpServlet {
                     // }
         
                     Class<?> paramType = p.getType();
-                    if(paramType == CustomSession.class) {
-                        CustomSession customSession = new CustomSession(req.getSession());
+                    if(paramType == src.classes.CustomSession.class) {
+                        src.classes.CustomSession customSession = new src.classes.CustomSession(req.getSession());
                         o = customSession;
                     }
-                    else if(!paramType.isPrimitive() && paramType != String.class && paramType != CustomSession.class)  {
+                    else if(!paramType.isPrimitive() && paramType != String.class && paramType != src.classes.CustomSession.class)  {
                         
                         Constructor c = paramType.getDeclaredConstructor();
                         o = c.newInstance();
@@ -266,7 +271,7 @@ public class FrontController extends HttpServlet {
         List<String> controllers = listControllers;
         controllers = new ArrayList<>(); 
 
-        HashMap<String, Mapping> urls = urlMapping;
+        HashMap<String, VerbMethod> urls = urlMapping;
         urls = new HashMap<>(); 
         
         try {
@@ -279,18 +284,23 @@ public class FrontController extends HttpServlet {
                 if(classe.isAnnotationPresent(Controller.class)) {
                     controllers.add(classe.getName());
 
-                    
-                    
                     // Getting the methods annotated with get
                     Method[] allMethods = classe.getMethods();
                     for (Method m : allMethods) {
-                        if (m.isAnnotationPresent(Get.class)) {
-                            Get mGetAnnotation = (Get) m.getAnnotation(Get.class);
-                            if(urls.containsKey(mGetAnnotation.url())){
-                                throw new InvalidAttributesException("The url "+mGetAnnotation.url()+" is duplicated.");
+                        if (m.isAnnotationPresent(Url.class)) {
+                            // Setting the verb corresponding to the method
+                            String verb = "";
+                            if (m.isAnnotationPresent(Post.class)) {
+                                verb = "POST";
+                            } else if (m.isAnnotationPresent(Get.class)) {
+                                verb = "GET";
                             }
-                            // storing the url and the method Mapping matching to it in the map
-                            urls.put(mGetAnnotation.url(), new Mapping(classe.getName(), m.getName(), m.getParameters()));
+
+                            String route = ((Url) m.getAnnotation(Url.class)).url();
+                            VerbMethod vm = urlMapping.containsKey(route) ? urlMapping.get(route) : new VerbMethod();
+                             vm.put(verb, m);
+                            
+                            urls.put(route, vm);
                         }
                     }
                 }
