@@ -6,25 +6,19 @@ package src.mg.itu.prom16;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field; 
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 import com.google.gson.Gson;
 
-import javax.naming.directory.InvalidAttributesException;
 
 import src.mg.itu.prom16.annotations.*;
-import src.mg.itu.prom16.classes.CustomSession;
 import src.mg.itu.prom16.classes.ModelView;
+import src.mg.itu.prom16.enumeration.Verbs;
 import src.mg.itu.prom16.exceptions.ReturnTypeException;
 import src.mg.itu.prom16.mapping.Mapping;
 import src.mg.itu.prom16.utils.*;
@@ -33,13 +27,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 /**
  *
  * @author SERGIANA
  */
 public class FrontController extends HttpServlet {
+    protected Verbs verbRequest;
     private List<String> listControllers;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
 
@@ -54,6 +48,7 @@ public class FrontController extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
 
+    
     
      public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
         try {
@@ -107,19 +102,11 @@ public class FrontController extends HttpServlet {
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
                 Mapping m = urlMapping.get(urlToSearch);
-                // checking if all the parameters are annotated
-                m.checkParam();
 
-                Object[] args = this.findParams(req, m);
-                Object result = m.invoke(args);
-                Class<?> retour = m.getReturnType();
+                Method mappingMethod = m.getMethod(verbRequest);
+                Class<?> retour = m.getReturnType(verbRequest);
 
-                Class mappingClass = Class.forName(m.getClassName());
-                Method mappingMethod = mappingClass.getDeclaredMethod(m.getMethodName(), m.getTypes());
-                
-                if (mappingMethod == null) {
-                    throw new ServletException("Method does not exist ");
-                } 
+                Object result = m.invoke(verbRequest, req);
 
                 checkOutput(req, resp, mappingMethod, retour, result);                
 
@@ -136,81 +123,6 @@ public class FrontController extends HttpServlet {
             out.println(e.getMessage());
         }
     }
-
-    public Object[] findParams(HttpServletRequest req, Mapping method) throws Exception {
-        List<Object> args = new ArrayList<>();
-
-        Class<?> clazz = Class.forName(method.getClassName());
-        Method m = clazz.getMethod(method.getMethodName(), method.getTypes());
-
-        try {
-
-                for (int i = 0; i < method.getParameters().length; i++) {
-                    Parameter p = method.getParameters()[i];
-                    Object o = null;
-                    String key = "";
-        
-                    if(p.isAnnotationPresent(Param.class)) {
-                        Param annotationParam = (Param) p.getAnnotation(Param.class);
-                        key = annotationParam.name();
-                    }
-                    // Alea fitsarana 1: toutes les  parametres doivent être annotées
-                    
-                    // } else {
-                    //     key = p.getName();
-                    // }
-        
-                    Class<?> paramType = p.getType();
-                    if(paramType == CustomSession.class) {
-                        CustomSession customSession = new CustomSession(req.getSession());
-                        o = customSession;
-                    }
-                    else if(!paramType.isPrimitive() && paramType != String.class && paramType != CustomSession.class)  {
-                        
-                        Constructor c = paramType.getDeclaredConstructor();
-                        o = c.newInstance();
-        
-                       
-                        Field[] attributes = paramType.getDeclaredFields();
-                        for (Field attr : attributes) {
-                            try {
-                                String attrKey = key + ".";
-                                if(attr.isAnnotationPresent(src.mg.itu.prom16.annotations.Field.class)) {
-                                    
-                                    src.mg.itu.prom16.annotations.Field f = attr.getAnnotation(src.mg.itu.prom16.annotations.Field.class);
-                                    attrKey += f.name();
-                                } else {
-                                    attrKey += attr.getName();
-                                }
-    
-                                String attrValStr = req.getParameter(attrKey);
-    
-                                Method setter = Utils.setter(attr, paramType);
-                                setter.invoke(o, Utils.convert(attrValStr, attr.getType()));
-                            } catch (Exception e) {
-                                throw e;
-                            }
-                        }
-                    } else {
-                        String valueStr = req.getParameter(key);
-                        o = Utils.convert(valueStr, paramType);
-                    }
-                    
-                    args.add(o);
-                }
-    
-        } catch (Exception e) {
-            throw e;
-        }
-        
-
-        if(args.size() > 0) {
-            return args.toArray();
-        } else {
-            return null;
-        }
-    }
-
 
     
     protected String[] getStringMethodArgs(Parameter[] params, HttpServletRequest req){
@@ -290,6 +202,7 @@ public class FrontController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        this.verbRequest = Verbs.GET;
         processRequest(request, response);
                 
     }
@@ -305,6 +218,7 @@ public class FrontController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        this.verbRequest = Verbs.POST;
         processRequest(request, response);
     }
 
