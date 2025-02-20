@@ -1,7 +1,7 @@
 # SprintFramework
 Projet création framework web dynamique
 
-Java version: "17.0.8" 2023-07-18 LTS
+Java version: "19.0.8" 2023-07-18 LTS
 
 Tomcat version: Tomcat 10.1
 
@@ -27,10 +27,15 @@ Tomcat version: Tomcat 10.1
         </context-param>
 
 ## Annotations
-- Annotate your controllers classes with src.annotations.Controller
-- Annotate your controller methods with src.annotations.Get(url="method's url").
-- Annotate the parameters of your controllers methods with src.annotations.Param(name="Parameter name"). The name should correspond to the name of the form input where you retrieve it.
-
+### Controller Annotations:
+- The class should be annotated with: @Controller
+- Endpoint methods:
+    - annotated with @Endpoint(url=*the url redirecting to the method*)
+    - Method get: @Get
+    - Method post: @Post
+    - Restapi method: @Restapi
+    - all the parameters of the methods must be annotated with @Param(name=*Parameter's name*),
+        the name must correspond to the name from a form input from where you retrieve its value.
 
 ## Session
 To manipulate sessions, you must import the package src.classes.CustomSession

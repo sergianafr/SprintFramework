@@ -7,4 +7,6 @@ import java.lang.annotation.ElementType;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface EndPoint {}
+public @interface EndPoint {
+    public String url() default "";
+}

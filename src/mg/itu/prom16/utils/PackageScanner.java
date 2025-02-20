@@ -79,8 +79,9 @@ public class PackageScanner {
     }
 
     private static String getUrl(Method m){
-        Url mGetAnnotation = (Url) m.getAnnotation(Url.class);
-        return mGetAnnotation.url();
+        // Url mGetAnnotation = (Url) m.getAnnotation(Url.class);
+        // return mGetAnnotation.url();
+        return m.getAnnotation(EndPoint.class).url();
     }
     private static Verbs getVerb(Method m){
         return m.isAnnotationPresent(Post.class) ? Verbs.POST : Verbs.GET;
