@@ -5,4 +5,15 @@ TODO.md
 *.txt
 framework.jar
 *.zip
-*.jar
+
+# Ignore log files
+*.log
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.DS_Store
+/lib/*
