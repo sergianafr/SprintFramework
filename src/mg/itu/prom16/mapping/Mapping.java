@@ -9,11 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.naming.directory.InvalidAttributesException;
+
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import src.mg.itu.prom16.annotations.Param;
 import src.mg.itu.prom16.classes.CustomSession;
 import src.mg.itu.prom16.enumeration.Verbs;
+import src.mg.itu.prom16.exceptions.UnsupportedVerbException;
 import src.mg.itu.prom16.utils.Utils;
 import src.mg.itu.prom16.utils.VerbMethod;
 
@@ -47,8 +50,10 @@ public class Mapping {
     public Method getMethod(Verbs verb)throws Exception {
         if(verbMethod.get(verb) != null){
             return verbMethod.get(verb);
+        }else{
+            throw new UnsupportedVerbException(String.valueOf(verb));
         }
-        throw new Exception("No method found for this verb");
+        // throw new UnsupportedVerbException(String.valueOf(verb));
         
     }
 

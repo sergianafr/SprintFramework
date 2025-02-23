@@ -1,23 +1,17 @@
 package src.mg.itu.prom16.utils;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.naming.directory.InvalidAttributesException;
-import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 
 import src.mg.itu.prom16.annotations.Controller;
 import src.mg.itu.prom16.annotations.EndPoint;
-import src.mg.itu.prom16.annotations.Get;
 import src.mg.itu.prom16.annotations.Post;
-import src.mg.itu.prom16.annotations.Url;
 import src.mg.itu.prom16.enumeration.Verbs;
 import src.mg.itu.prom16.mapping.Mapping; 
 public class PackageScanner {

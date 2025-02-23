@@ -20,6 +20,7 @@ import src.mg.itu.prom16.annotations.*;
 import src.mg.itu.prom16.classes.ModelView;
 import src.mg.itu.prom16.enumeration.Verbs;
 import src.mg.itu.prom16.exceptions.ReturnTypeException;
+import src.mg.itu.prom16.exceptions.UnsupportedVerbException;
 import src.mg.itu.prom16.mapping.Mapping;
 import src.mg.itu.prom16.utils.*;
 
@@ -34,7 +35,6 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class FrontController extends HttpServlet {
     protected Verbs verbRequest;
-    private List<String> listControllers;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
 
 
@@ -117,7 +117,10 @@ public class FrontController extends HttpServlet {
             
             out.flush();
             out.close();
-        } catch (Exception e) {
+        } catch(UnsupportedVerbException ve){
+            resp.sendError(404, ve.getMessage());
+        }
+        catch (Exception e) {
             e.printStackTrace();
             
             out.println(e.getMessage());
@@ -142,34 +145,6 @@ public class FrontController extends HttpServlet {
         }
         return null;
     }
-
-    // getting all the classes in the given package 
-
-    // public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
-    //     List<Class<?>> classes = new ArrayList<>();
-
-        
-    //     String path = "WEB-INF/classes/" + packageName.replace(".", "/");
-    //     String realPath = getServletContext().getRealPath(path);
-
-    //     File directory = new File(realPath);
-    //     File[] files = directory.listFiles();
-    //     if(!directory.exists()){
-    //         throw new InvalidAttributesException("The package "+packageName+" does not exist.");
-    //     }
-    //     else if(files.length <= 0){
-    //         throw new InvalidAttributesException("The package "+packageName+" is empty.");
-    //     } 
-    //     for(File f : files) {
-    //         // filtering class files
-    //         if(f.isFile() && f.getName().endsWith(".class")) {
-    //             String className = packageName + "." + f.getName().split(".class")[0];
-    //             classes.add(Class.forName(className));
-    //         }
-    //     }
-
-    //     return classes;
-    // }
 
     
     @Override
@@ -221,6 +196,8 @@ public class FrontController extends HttpServlet {
         this.verbRequest = Verbs.POST;
         processRequest(request, response);
     }
+
+  
 
     /**
      * Returns a short description of the servlet.
