@@ -10,8 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.naming.directory.InvalidAttributesException;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 
 import src.mg.itu.prom16.annotations.Controller;
 import src.mg.itu.prom16.annotations.EndPoint;

@@ -2,7 +2,7 @@ package src.mg.itu.prom16.classes;
 
 import java.util.HashMap;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 public class CustomSession {
     private HashMap<String, Object> values;

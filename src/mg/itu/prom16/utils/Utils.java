@@ -6,7 +6,7 @@ import java.lang.reflect.Parameter;
 import java.util.Enumeration;
 import java.util.HashMap;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import src.mg.itu.prom16.annotations.Param;
 import src.mg.itu.prom16.classes.CustomSession;
