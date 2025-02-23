@@ -4,4 +4,5 @@ temp/
 TODO.md
 *.txt
 framework.jar
- 
+*.zip
+*.jar

@@ -1,8 +1,7 @@
-package src.annotations;
+package src.mg.itu.prom16.annotations;
 import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Get {
-    public String url();
+public @interface Restapi {
+
 }
- 

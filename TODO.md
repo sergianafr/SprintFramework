@@ -82,7 +82,7 @@ Creation exception
 
 ## Sprint-6
 ### But: 
-Recuperer des données d'un formulaire et l'envoyer dans la fonction a l'action (POST)
+Recuperer des données d'un formulaire et l'envoyer dans la fonction a l'action (GET)
 
 #### Framework:
 - [x] Ajout d'attribut dans la classe Mapping: arguments de la fonction de type Parameter[]
@@ -139,4 +139,18 @@ Exposer les actions du controleur en REST API, retourner un json
         - [x] Si ModelView, transformer en json l'attribut data
     - [x] Ne plus utiliser dispatch forwarrd si l'annotation existe mais getWriter()
     - [x] changer le response type
+
+## Sprint-10
+### But:
+Ajout de methode post 
+#### Framework:
+    - [x] Creer une annotation post
+    - [x] Creer annotation endpoint pour marquer les methodes endpoint
+    - [x] Creation enum POST et GET a mettre dans key de VerbMethod 
+    - [x] Remplacer l'attribut methodName par un VerbMethod
+        - [x] adapter les fonctions de frontcontroller a ce changement
+
+## Sprint-11 
+### But:
+Erreur lors de l'usage de verb autre que get et post 
 

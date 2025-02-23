@@ -4,39 +4,36 @@
  */
 package src.mg.itu.prom16;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import java.io.File;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field; 
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 import com.google.gson.Gson;
 
-import javax.naming.directory.InvalidAttributesException;
 
-import src.annotations.*;
-import src.classes.CustomSession;
-import src.classes.ModelView;
-import src.utils.*;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import src.mg.itu.prom16.annotations.*;
+import src.mg.itu.prom16.classes.ModelView;
+import src.mg.itu.prom16.enumeration.Verbs;
+import src.mg.itu.prom16.exceptions.ReturnTypeException;
+import src.mg.itu.prom16.mapping.Mapping;
+import src.mg.itu.prom16.utils.*;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  *
  * @author SERGIANA
  */
 public class FrontController extends HttpServlet {
+    protected Verbs verbRequest;
     private List<String> listControllers;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
 
@@ -51,6 +48,7 @@ public class FrontController extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
 
+    
     
      public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
         try {
@@ -70,19 +68,20 @@ public class FrontController extends HttpServlet {
                 }
                 resp.setContentType("text/json");
                 resp.setCharacterEncoding("UTF-8");
+            } else {
+                if(retour == String.class) {
+                    out.println((String) result);
+                } else if(retour == ModelView.class) {
+                    ModelView mv = (ModelView) result;
+                    req.setAttribute("attribut", mv.getData());
+    
+                    RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
+                    dispatcher.forward(req, resp);
+                }else {
+                    throw new ReturnTypeException("The return type is not supported.");
+                }
             }
 
-            if(retour == String.class) {
-                out.println((String) result);
-            } else if(retour == ModelView.class) {
-                ModelView mv = (ModelView) result;
-                req.setAttribute("attribut", mv.getData());
-
-                RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
-                dispatcher.forward(req, resp);
-            }else {
-                throw new ServletException("The return type is not supported.");
-            }
         } catch (Exception e) {
             // TODO: handle exception
             e.printStackTrace();
@@ -103,19 +102,11 @@ public class FrontController extends HttpServlet {
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
                 Mapping m = urlMapping.get(urlToSearch);
-                // checking if all the parameters are annotated
-                m.checkParam();
 
-                Object[] args = this.findParams(req, m);
-                Object result = m.invoke(args);
-                Class<?> retour = m.getReturnType();
+                Method mappingMethod = m.getMethod(verbRequest);
+                Class<?> retour = m.getReturnType(verbRequest);
 
-                Class mappingClass = Class.forName(m.getClassName());
-                Method mappingMethod = mappingClass.getDeclaredMethod(m.getMethodName(), m.getTypes());
-                
-                if (mappingMethod == null) {
-                    throw new ServletException("Method does not exist ");
-                } 
+                Object result = m.invoke(verbRequest, req);
 
                 checkOutput(req, resp, mappingMethod, retour, result);                
 
@@ -132,81 +123,6 @@ public class FrontController extends HttpServlet {
             out.println(e.getMessage());
         }
     }
-
-    public Object[] findParams(HttpServletRequest req, Mapping method) throws Exception {
-        List<Object> args = new ArrayList<>();
-
-        Class<?> clazz = Class.forName(method.getClassName());
-        Method m = clazz.getMethod(method.getMethodName(), method.getTypes());
-
-        try {
-
-                for (int i = 0; i < method.getParameters().length; i++) {
-                    Parameter p = method.getParameters()[i];
-                    Object o = null;
-                    String key = "";
-        
-                    if(p.isAnnotationPresent(Param.class)) {
-                        Param annotationParam = (Param) p.getAnnotation(Param.class);
-                        key = annotationParam.name();
-                    }
-                    // Alea fitsarana 1: toutes les  parametres doivent être annotées
-                    
-                    // } else {
-                    //     key = p.getName();
-                    // }
-        
-                    Class<?> paramType = p.getType();
-                    if(paramType == CustomSession.class) {
-                        CustomSession customSession = new CustomSession(req.getSession());
-                        o = customSession;
-                    }
-                    else if(!paramType.isPrimitive() && paramType != String.class && paramType != CustomSession.class)  {
-                        
-                        Constructor c = paramType.getDeclaredConstructor();
-                        o = c.newInstance();
-        
-                       
-                        Field[] attributes = paramType.getDeclaredFields();
-                        for (Field attr : attributes) {
-                            try {
-                                String attrKey = key + ".";
-                                if(attr.isAnnotationPresent(src.annotations.Field.class)) {
-                                    
-                                    src.annotations.Field f = attr.getAnnotation(src.annotations.Field.class);
-                                    attrKey += f.name();
-                                } else {
-                                    attrKey += attr.getName();
-                                }
-    
-                                String attrValStr = req.getParameter(attrKey);
-    
-                                Method setter = Utils.setter(attr, paramType);
-                                setter.invoke(o, Utils.convert(attrValStr, attr.getType()));
-                            } catch (Exception e) {
-                                throw e;
-                            }
-                        }
-                    } else {
-                        String valueStr = req.getParameter(key);
-                        o = Utils.convert(valueStr, paramType);
-                    }
-                    
-                    args.add(o);
-                }
-    
-        } catch (Exception e) {
-            throw e;
-        }
-        
-
-        if(args.size() > 0) {
-            return args.toArray();
-        } else {
-            return null;
-        }
-    }
-
 
     
     protected String[] getStringMethodArgs(Parameter[] params, HttpServletRequest req){
@@ -229,31 +145,31 @@ public class FrontController extends HttpServlet {
 
     // getting all the classes in the given package 
 
-    public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
-        List<Class<?>> classes = new ArrayList<>();
+    // public List<Class<?>> findClasses(String packageName) throws ClassNotFoundException, InvalidAttributesException {
+    //     List<Class<?>> classes = new ArrayList<>();
 
         
-        String path = "WEB-INF/classes/" + packageName.replace(".", "/");
-        String realPath = getServletContext().getRealPath(path);
+    //     String path = "WEB-INF/classes/" + packageName.replace(".", "/");
+    //     String realPath = getServletContext().getRealPath(path);
 
-        File directory = new File(realPath);
-        File[] files = directory.listFiles();
-        if(!directory.exists()){
-            throw new InvalidAttributesException("The package "+packageName+" does not exist.");
-        }
-        else if(files.length <= 0){
-            throw new InvalidAttributesException("The package "+packageName+" is empty.");
-        } 
-        for(File f : files) {
-            // filtering class files
-            if(f.isFile() && f.getName().endsWith(".class")) {
-                String className = packageName + "." + f.getName().split(".class")[0];
-                classes.add(Class.forName(className));
-            }
-        }
+    //     File directory = new File(realPath);
+    //     File[] files = directory.listFiles();
+    //     if(!directory.exists()){
+    //         throw new InvalidAttributesException("The package "+packageName+" does not exist.");
+    //     }
+    //     else if(files.length <= 0){
+    //         throw new InvalidAttributesException("The package "+packageName+" is empty.");
+    //     } 
+    //     for(File f : files) {
+    //         // filtering class files
+    //         if(f.isFile() && f.getName().endsWith(".class")) {
+    //             String className = packageName + "." + f.getName().split(".class")[0];
+    //             classes.add(Class.forName(className));
+    //         }
+    //     }
 
-        return classes;
-    }
+    //     return classes;
+    // }
 
     
     @Override
@@ -263,42 +179,13 @@ public class FrontController extends HttpServlet {
         ServletContext context = getServletContext();
         String packageName = context.getInitParameter("Controllers");
 
-        List<String> controllers = listControllers;
-        controllers = new ArrayList<>(); 
-
-        HashMap<String, Mapping> urls = urlMapping;
-        urls = new HashMap<>(); 
+        // Getting the real path of the package containing the controllers
+        String path = "WEB-INF/classes/" + packageName.replace(".", "/");
+        String realPath = getServletContext().getRealPath(path);
         
         try {
-
-           
-            List<Class<?>> allClasses = this.findClasses(packageName);
-
-            for (Class<?> classe : allClasses) {
-                // checking the controller class
-                if(classe.isAnnotationPresent(Controller.class)) {
-                    controllers.add(classe.getName());
-
-                    
-                    
-                    // Getting the methods annotated with get
-                    Method[] allMethods = classe.getMethods();
-                    for (Method m : allMethods) {
-                        if (m.isAnnotationPresent(Get.class)) {
-                            Get mGetAnnotation = (Get) m.getAnnotation(Get.class);
-                            if(urls.containsKey(mGetAnnotation.url())){
-                                throw new InvalidAttributesException("The url "+mGetAnnotation.url()+" is duplicated.");
-                            }
-                            // storing the url and the method Mapping matching to it in the map
-                            urls.put(mGetAnnotation.url(), new Mapping(classe.getName(), m.getName(), m.getParameters()));
-                        }
-                    }
-                }
-            }
-
-            // setting the values of the attributes
-            this.listControllers = controllers;
-            this.urlMapping = urls;
+            List<Class<?>> allClasses = PackageScanner.findControllerClasses(packageName, realPath);
+            this.urlMapping = PackageScanner.getMapping(allClasses);
         } catch (Exception e) {
             throw new ServletException(e.getMessage());
         }
@@ -315,6 +202,7 @@ public class FrontController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        this.verbRequest = Verbs.GET;
         processRequest(request, response);
                 
     }
@@ -330,6 +218,7 @@ public class FrontController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        this.verbRequest = Verbs.POST;
         processRequest(request, response);
     }
 

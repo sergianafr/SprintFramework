@@ -1,4 +1,4 @@
-package src.utils;
+package src.mg.itu.prom16.utils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -6,9 +6,10 @@ import java.lang.reflect.Parameter;
 import java.util.Enumeration;
 import java.util.HashMap;
 
-import javax.servlet.http.HttpSession;
-import src.annotations.Param;
-import src.classes.CustomSession;
+import jakarta.servlet.http.HttpSession;
+
+import src.mg.itu.prom16.annotations.Param;
+import src.mg.itu.prom16.classes.CustomSession;
 
 public class Utils {
     public static Method setter(Field f, Class<?> clazz) throws NoSuchMethodException {
