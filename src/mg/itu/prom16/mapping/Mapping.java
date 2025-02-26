@@ -1,5 +1,5 @@
 package src.mg.itu.prom16.mapping;
-
+import src.mg.itu.prom16.annotations.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -17,6 +17,7 @@ import src.mg.itu.prom16.annotations.Param;
 import src.mg.itu.prom16.classes.CustomSession;
 import src.mg.itu.prom16.enumeration.Verbs;
 import src.mg.itu.prom16.exceptions.UnsupportedVerbException;
+import src.mg.itu.prom16.utils.FilePart;
 import src.mg.itu.prom16.utils.Utils;
 import src.mg.itu.prom16.utils.VerbMethod;
 
@@ -77,7 +78,7 @@ public class Mapping {
         Method m = verbMethod.get(requestVerb);
         Parameter[] parameters = m.getParameters();
         for(Parameter p : parameters){
-            if(!p.isAnnotationPresent(Param.class) && p.getType() != CustomSession.class){
+            if(!p.isAnnotationPresent(Param.class) && p.getType() != CustomSession.class && !p.isAnnotationPresent(File.class)){
                 throw new InvalidAttributesException("ETU 002610 param not annotated");
             }
         }
@@ -101,12 +102,24 @@ public class Mapping {
     }
     
     private Object processParameter(HttpServletRequest req, Parameter parameter) throws Exception {
-        String key = getParameterKey(parameter);
         Class<?> paramType = parameter.getType();
-    
+        
+        // If the parameter is annotated with @File convert directly the part from the request to a FilePart object
+        if(parameter.isAnnotationPresent(src.mg.itu.prom16.annotations.File.class)){
+            if(paramType.equals(FilePart.class)){
+                String key = parameter.getAnnotation(File.class).name();
+                return new FilePart(req.getPart(key));
+            }
+            else{
+                throw new IllegalArgumentException("An object annotated with @File must be of type FilePart");
+            }
+        }
+        String key = getParameterKey(parameter);
+        
         if (paramType == CustomSession.class) {
             return createCustomSession(req);
-        } else if (isObject(paramType)) {
+        }
+        else if (isObject(paramType)) {
             return createObject(req, key, paramType);
         } else {
             return createSimpleObject(req, key, paramType);

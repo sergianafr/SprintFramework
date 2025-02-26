@@ -25,6 +25,7 @@ import src.mg.itu.prom16.mapping.Mapping;
 import src.mg.itu.prom16.utils.*;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,6 +34,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author SERGIANA
  */
+@MultipartConfig
 public class FrontController extends HttpServlet {
     protected Verbs verbRequest;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
@@ -127,24 +129,6 @@ public class FrontController extends HttpServlet {
         }
     }
 
-    
-    protected String[] getStringMethodArgs(Parameter[] params, HttpServletRequest req){
-        if(params != null){
-            String[] methodArgs = new String[params.length];
-            int i = 0;
-            for (Parameter param : params) {
-                String paramString = req.getParameter(param.getName());
-                if(paramString != null){
-                    methodArgs[i] = req.getParameter(param.getName());
-                } else {
-                    String paramName = param.getAnnotation(Param.class).name();
-                    methodArgs[i] = req.getParameter(paramName);
-                }
-            }
-            return methodArgs;
-        }
-        return null;
-    }
 
     
     @Override
