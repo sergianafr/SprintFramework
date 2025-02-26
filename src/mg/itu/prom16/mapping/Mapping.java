@@ -1,5 +1,7 @@
 package src.mg.itu.prom16.mapping;
 import src.mg.itu.prom16.annotations.File;
+import src.mg.itu.prom16.annotations.NotBlank;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -10,12 +12,15 @@ import java.util.List;
 
 import javax.naming.directory.InvalidAttributesException;
 
+import src.mg.itu.prom16.annotations.Range;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import src.mg.itu.prom16.annotations.Param;
+import src.mg.itu.prom16.annotations.Required;
 import src.mg.itu.prom16.classes.CustomSession;
 import src.mg.itu.prom16.enumeration.Verbs;
+import src.mg.itu.prom16.exceptions.InvalidParamValue;
 import src.mg.itu.prom16.exceptions.UnsupportedVerbException;
 import src.mg.itu.prom16.utils.FilePart;
 import src.mg.itu.prom16.utils.Utils;
@@ -103,12 +108,13 @@ public class Mapping {
     
     private Object processParameter(HttpServletRequest req, Parameter parameter) throws Exception {
         Class<?> paramType = parameter.getType();
+        Object result = null;
         
         // If the parameter is annotated with @File convert directly the part from the request to a FilePart object
         if(parameter.isAnnotationPresent(src.mg.itu.prom16.annotations.File.class)){
             if(paramType.equals(FilePart.class)){
                 String key = parameter.getAnnotation(File.class).name();
-                return new FilePart(req.getPart(key));
+                result = new FilePart(req.getPart(key), null);
             }
             else{
                 throw new IllegalArgumentException("An object annotated with @File must be of type FilePart");
@@ -117,13 +123,55 @@ public class Mapping {
         String key = getParameterKey(parameter);
         
         if (paramType == CustomSession.class) {
-            return createCustomSession(req);
+            result = createCustomSession(req);
         }
         else if (isObject(paramType)) {
-            return createObject(req, key, paramType);
+            result = createObject(req, key, paramType);
         } else {
-            return createSimpleObject(req, key, paramType);
+            result = createSimpleObject(req, key, paramType);
         }
+        try {
+            checkValidationParam(parameter, result);
+        } catch (Exception e) {
+           throw e;
+        }
+        return result;
+    }
+
+    private void checkValidationParam(Parameter param, Object value) throws Exception{
+        if(param.isAnnotationPresent(Required.class)){
+            if(value == null){
+                throw new InvalidParamValue("The parameter " + param.getName() + " is required");
+            }
+        } else if (param.isAnnotationPresent(NotBlank.class)){
+            if(param.getType() == String.class && value == null || (String)value == ""){
+                throw new InvalidParamValue("The parameter " + param.getName() + " is should not be blank");
+            }
+        } else if (param.isAnnotationPresent(Range.class)){
+            Range range = param.getAnnotation(Range.class);
+            if(value != null){
+                if(value instanceof Integer){
+                    if((int)value < range.minValue() || (int)value > range.maxValue()){
+                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
+                    }
+                } else if(value instanceof Double){
+                    if((double)value < range.minValue() || (double)value > range.maxValue()){
+                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
+                    }
+                } else if(value instanceof Float){
+                    if((float)value < range.minValue() || (float)value > range.maxValue()){
+                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
+                    }
+                } else if(value instanceof Long){
+                    if((long)value < range.minValue() || (long)value > range.maxValue()){
+                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
+                    }
+                } else {
+                    throw new InvalidParamValue("The parameter " + param.getName() + " should have a numerical value");
+                }
+            }
+        }
+
     }
     
     private String getParameterKey(Parameter parameter) {
@@ -144,6 +192,18 @@ public class Mapping {
     }
     
     private Object createObject(HttpServletRequest req, String key, Class<?> paramType) throws Exception {
+        System.out.println(key +" key");
+        if (paramType == Double.class || paramType == double.class) {
+            String value = req.getParameter(key);
+            return (value != null) ? Double.valueOf(value) : 0.0;
+        } else if (paramType == Float.class || paramType == float.class) {
+            String value = req.getParameter(key);
+            return (value != null) ? Float.valueOf(value) : 0.0f;
+        } else if (paramType == Integer.class || paramType == int.class) {
+            String value = req.getParameter(key);
+            return (value != null) ? Integer.valueOf(value) : 0;
+        }
+        
         Object obj = paramType.getDeclaredConstructor().newInstance();
         Field[] fields = paramType.getDeclaredFields();
     
@@ -155,9 +215,10 @@ public class Mapping {
                 setFieldValue(obj, field, fieldValue);
             }
         }
-    
+        
         return obj;
     }
+    
     
     private String buildFieldKey(String baseKey, Field field) {
         String fieldKey = baseKey + ".";
