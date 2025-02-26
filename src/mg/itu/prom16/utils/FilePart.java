@@ -1,5 +1,7 @@
 package src.mg.itu.prom16.utils;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.AccessDeniedException;
@@ -35,38 +37,16 @@ public class FilePart {
     public boolean isEmpty() {
         return part.getSize() == 0;
     }
-
-   public void save(String filePath) throws IOException {
-    try {
-        // Create the full path
-        Path path = Paths.get(filePath);
-        System.out.println("Absolute path: " + path.toAbsolutePath());
-
-        // Get the parent directory of the file
-        Path parentDir = path.getParent();
-
-        // Create directories if they don't exist
-        if (parentDir != null && !Files.exists(parentDir)) {
-            Files.createDirectories(parentDir);
+    public void save(String destinationPath) throws IOException {
+        File file = new File(destinationPath);
+        try (InputStream inputStream = part.getInputStream();
+             FileOutputStream outputStream = new FileOutputStream(file)) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
         }
-
-        // Check directory permissions
-        System.out.println("Directory readable: " + Files.isReadable(parentDir));
-        System.out.println("Directory writable: " + Files.isWritable(parentDir));
-
-        
-
-        // Write the file content to the specified path
-        Files.write(path, getBytes());
-        System.out.println("File written successfully: " + path);
-    } catch (AccessDeniedException e) {
-        System.err.println("Access denied: Unable to write to the specified path: " + filePath);
-        e.printStackTrace();
-        throw e; // Re-throw the exception if needed
-    } catch (IOException e) {
-        System.err.println("An I/O error occurred: " + e.getMessage());
-        e.printStackTrace();
-        throw e; // Re-throw the exception if needed
     }
-}
+
 }
