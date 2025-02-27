@@ -20,8 +20,9 @@ import src.mg.itu.prom16.annotations.Param;
 import src.mg.itu.prom16.annotations.Required;
 import src.mg.itu.prom16.classes.CustomSession;
 import src.mg.itu.prom16.enumeration.Verbs;
-import src.mg.itu.prom16.exceptions.InvalidParamValue;
+import src.mg.itu.prom16.exceptions.InvalidParamValueException;
 import src.mg.itu.prom16.exceptions.UnsupportedVerbException;
+import src.mg.itu.prom16.utils.Errors;
 import src.mg.itu.prom16.utils.FilePart;
 import src.mg.itu.prom16.utils.Utils;
 import src.mg.itu.prom16.utils.VerbMethod;
@@ -90,14 +91,17 @@ public class Mapping {
     }
     
     // Getting the values of the method parameters 
-    public Object[] findParams(HttpServletRequest req, Verbs requestVerb) throws Exception {
+    public Object[] findParams(HttpServletRequest req, Verbs requestVerb, Errors listErrors) throws Exception {
         List<Object> args = new ArrayList<>();
         Method method = verbMethod.get(requestVerb);
     
         try {
             for (Parameter parameter : method.getParameters()) {
-                Object arg = processParameter(req, parameter);
+                Object arg = processParameter(req, parameter, listErrors);
                 args.add(arg);
+            }
+            if(!listErrors.isEmpty()){
+                throw new InvalidParamValueException(listErrors);
             }
         } catch (Exception e) {
             throw e;
@@ -106,7 +110,7 @@ public class Mapping {
         return args.isEmpty() ? null : args.toArray();
     }
     
-    private Object processParameter(HttpServletRequest req, Parameter parameter) throws Exception {
+    private Object processParameter(HttpServletRequest req, Parameter parameter, Errors listErrors) throws Exception {
         Class<?> paramType = parameter.getType();
         Object result = null;
         
@@ -117,7 +121,7 @@ public class Mapping {
                 result = new FilePart(req.getPart(key), null);
             }
             else{
-                throw new IllegalArgumentException("An object annotated with @File must be of type FilePart");
+                throw new InvalidParamValueException("An object annotated with @File must be of type FilePart");
             }
         }
         String key = getParameterKey(parameter);
@@ -130,44 +134,36 @@ public class Mapping {
         } else {
             result = createSimpleObject(req, key, paramType);
         }
-        try {
-            checkValidationParam(parameter, result);
-        } catch (Exception e) {
-           throw e;
-        }
+        // Checking that the parameters are valid
+        checkValidationParam(parameter, result, listErrors);
+        // if there are errors related to the validation of the parameters, throw an InvalidParamValueException containing the list of errors 
         return result;
     }
 
-    private void checkValidationParam(Parameter param, Object value) throws Exception{
+    private void checkValidationParam(Parameter param, Object value, Errors listErrors) {
         if(param.isAnnotationPresent(Required.class)){
+            System.out.println("Required"+" "+param.getName());
             if(value == null){
-                throw new InvalidParamValue("The parameter " + param.getName() + " is required");
+
+                System.out.println("The parameter " + param.getName() + " is required");
+                listErrors.addError(param.getName(),new InvalidParamValueException("The parameter " + param.getName() + " is required").getMessage());
+                // throw new InvalidParamValueException("The parameter " + param.getName() + " is required");
             }
-        } else if (param.isAnnotationPresent(NotBlank.class)){
+        }if (param.isAnnotationPresent(NotBlank.class)){
             if(param.getType() == String.class && value == null || (String)value == ""){
-                throw new InvalidParamValue("The parameter " + param.getName() + " is should not be blank");
+                listErrors.addError(param.getName(),new InvalidParamValueException("The parameter " + param.getName() + " is should not be blank").getMessage());
+                System.out.println("The parameter " + param.getName() + " is should not be blank"   );
+                // throw new InvalidParamValueException("The parameter " + param.getName() + " is should not be blank");
             }
-        } else if (param.isAnnotationPresent(Range.class)){
+        } if (param.isAnnotationPresent(Range.class)){
             Range range = param.getAnnotation(Range.class);
             if(value != null){
-                if(value instanceof Integer){
+                if(value instanceof Integer || value instanceof Double || value instanceof Float || value instanceof Long){
                     if((int)value < range.minValue() || (int)value > range.maxValue()){
-                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
+                        listErrors.addError(param.getName(),new InvalidParamValueException("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue()).getMessage());
                     }
-                } else if(value instanceof Double){
-                    if((double)value < range.minValue() || (double)value > range.maxValue()){
-                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
-                    }
-                } else if(value instanceof Float){
-                    if((float)value < range.minValue() || (float)value > range.maxValue()){
-                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
-                    }
-                } else if(value instanceof Long){
-                    if((long)value < range.minValue() || (long)value > range.maxValue()){
-                        throw new InvalidParamValue("The parameter " + param.getName() + " should be between " + range.minValue() + " and " + range.maxValue());
-                    }
-                } else {
-                    throw new InvalidParamValue("The parameter " + param.getName() + " should have a numerical value");
+                }  else {
+                    listErrors.addError(param.getName(),new InvalidParamValueException("The parameter " + param.getName() + " should have a numerical value").getMessage());
                 }
             }
         }
@@ -193,15 +189,16 @@ public class Mapping {
     
     private Object createObject(HttpServletRequest req, String key, Class<?> paramType) throws Exception {
         System.out.println(key +" key");
+        System.out.println(req.getParameter(key) +" value");
         if (paramType == Double.class || paramType == double.class) {
             String value = req.getParameter(key);
-            return (value != null) ? Double.valueOf(value) : 0.0;
+            return (value != null) ? Double.valueOf(value) : null;
         } else if (paramType == Float.class || paramType == float.class) {
             String value = req.getParameter(key);
-            return (value != null) ? Float.valueOf(value) : 0.0f;
+            return (value != null) ? Float.valueOf(value) : null;
         } else if (paramType == Integer.class || paramType == int.class) {
             String value = req.getParameter(key);
-            return (value != null) ? Integer.valueOf(value) : 0;
+            return (value != null) ? Integer.valueOf(value) : null;
         }
         
         Object obj = paramType.getDeclaredConstructor().newInstance();
@@ -242,12 +239,12 @@ public class Mapping {
         return Utils.convert(valueStr, paramType);
     }
 
-    public Object invoke(Verbs requestVerb, HttpServletRequest request)throws Exception{
+    public Object invoke(Verbs requestVerb, HttpServletRequest request, Errors listError)throws Exception{
         Object o = null;
         try {
             checkParam(requestVerb);
             Method m = verbMethod.get(requestVerb);
-            o = m.invoke(controllerClass.getConstructor().newInstance(), findParams((HttpServletRequest) request, requestVerb));
+            o = m.invoke(controllerClass.getConstructor().newInstance(), findParams((HttpServletRequest) request, requestVerb, listError));
         } catch (Exception e) {
             throw e;
         }

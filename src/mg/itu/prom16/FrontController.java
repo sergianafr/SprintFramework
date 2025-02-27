@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import src.mg.itu.prom16.annotations.*;
 import src.mg.itu.prom16.classes.ModelView;
 import src.mg.itu.prom16.enumeration.Verbs;
+import src.mg.itu.prom16.exceptions.InvalidParamValueException;
 import src.mg.itu.prom16.exceptions.ReturnTypeException;
 import src.mg.itu.prom16.exceptions.UnsupportedVerbException;
 import src.mg.itu.prom16.mapping.Mapping;
@@ -100,16 +101,20 @@ public class FrontController extends HttpServlet {
             String[] partedReq = requestedURL.split("/");
             String urlToSearch = partedReq[partedReq.length - 1];  
             System.out.println(requestedURL+"ggggggg");  
-
+            
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
+                Errors errors = new Errors();
                 Mapping m = urlMapping.get(urlToSearch);
-
+                
                 Method mappingMethod = m.getMethod(verbRequest);
+
+                // setting where it redirects in case of error in validation of parameters 
+                errors.setRedirectionUrl(mappingMethod.getAnnotation(ErrorPage.class).url());
                 Class<?> retour = m.getReturnType(verbRequest);
+                Object result = m.invoke(verbRequest, req, errors);
 
-                Object result = m.invoke(verbRequest, req);
-
+            
                 checkOutput(req, resp, mappingMethod, retour, result);                
 
             } else {
@@ -119,7 +124,18 @@ public class FrontController extends HttpServlet {
             
             out.flush();
             out.close();
-        } catch(UnsupportedVerbException ve){
+        } catch(InvalidParamValueException ipv){
+            // Getting the errors
+            Errors errors = ipv.getErrors();
+            // Getting the redirection url
+            String redirectionUrl = errors.getRedirectionUrl();
+            // Setting the errors in the request
+            req.setAttribute("errors", errors);
+            // Redirecting to the error page
+            RequestDispatcher dispatcher = req.getRequestDispatcher(redirectionUrl);
+            dispatcher.forward(req, resp);
+        }
+        catch(UnsupportedVerbException ve){
             resp.sendError(404, ve.getMessage());
         }
         catch (Exception e) {
