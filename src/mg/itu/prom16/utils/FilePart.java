@@ -49,6 +49,7 @@ public class FilePart {
         // Get the parent directory of the file
         Path parentDir = path.getParent();
 
+        
         System.out.println("chemin complet : " + parentDir);
 
         // Create directories if they don't exist
