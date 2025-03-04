@@ -39,6 +39,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class FrontController extends HttpServlet {
     protected Verbs verbRequest;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
+    public static String SESSION_AUTHENTICATED, SESSION_ROLE;
 
 
     /**
@@ -86,13 +87,14 @@ public class FrontController extends HttpServlet {
             }
 
         } catch (Exception e) {
-            // TODO: handle exception
             e.printStackTrace();
         }
      }
     
      public void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
+        if(isStaticFile(req, resp)){
+            return;
+        }
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
         try {
@@ -100,7 +102,7 @@ public class FrontController extends HttpServlet {
             String requestedURL = req.getRequestURL().toString();
             String[] partedReq = requestedURL.split("/");
             String urlToSearch = partedReq[partedReq.length - 1];  
-            System.out.println(requestedURL+"ggggggg");  
+            System.out.println(requestedURL+": requested URL!!!!");  
             
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
@@ -110,7 +112,9 @@ public class FrontController extends HttpServlet {
                 Method mappingMethod = m.getMethod(verbRequest);
 
                 // setting where it redirects in case of error in validation of parameters 
-                errors.setRedirectionUrl(mappingMethod.getAnnotation(ErrorPage.class).url());
+                if(mappingMethod.isAnnotationPresent(ErrorPage.class)){
+                    errors.setRedirectionUrl(mappingMethod.getAnnotation(ErrorPage.class).url());
+                }
                 Class<?> retour = m.getReturnType(verbRequest);
                 Object result = m.invoke(verbRequest, req, errors);
 
@@ -145,12 +149,50 @@ public class FrontController extends HttpServlet {
         }
     }
 
+    protected boolean isStaticFile(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String url = req.getRequestURI();
+        String contextPath = req.getContextPath();
+        String relativePath = url.substring(contextPath.length());
+    
+        // Définir les extensions autorisées pour les fichiers statiques
+        String[] staticExtensions = {".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2", ".ttf"};
+    
+        // Vérifier si l'URL correspond à un fichier statique
+        for (String ext : staticExtensions) {
+            if (relativePath.endsWith(ext)) {
+                java.io.File staticFile = new java.io.File(getServletContext().getRealPath(relativePath));
+                if (staticFile.exists() && staticFile.isFile()) {
+                    // Déterminer le type MIME et renvoyer le fichier
+                    String mimeType = getServletContext().getMimeType(staticFile.getName());
+                    if (mimeType == null) {
+                        mimeType = "application/octet-stream"; // Par défaut
+                    }
+                    resp.setContentType(mimeType);
+                    resp.setContentLength((int) staticFile.length());
+                    
+                    // Envoyer le fichier dans la réponse
+                    try (var in = new java.io.FileInputStream(staticFile);
+                         var out = resp.getOutputStream()) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, bytesRead);
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }   
 
     
     @Override
     public void init() throws ServletException {
         super.init();
-
+        SESSION_AUTHENTICATED = getInitParameter("session_authenticated") != null? getInitParameter("session_authenticated"): "authenticated";
+        System.out.println(SESSION_AUTHENTICATED+" authenticated");
+	    SESSION_ROLE = getInitParameter("session_role") != null ? getInitParameter("session_role") : "role";
         ServletContext context = getServletContext();
         String packageName = context.getInitParameter("Controllers");
 
@@ -165,6 +207,7 @@ public class FrontController extends HttpServlet {
             throw new ServletException(e.getMessage());
         }
     }
+
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.
