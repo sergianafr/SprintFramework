@@ -1,4 +1,5 @@
 package src.mg.itu.prom16.mapping;
+import src.mg.itu.prom16.annotations.Authenticated;
 import src.mg.itu.prom16.annotations.File;
 import src.mg.itu.prom16.annotations.NotBlank;
 
@@ -6,6 +7,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.net.Authenticator;
 import java.net.http.HttpRequest;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +19,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import src.mg.itu.prom16.annotations.Param;
+import src.mg.itu.prom16.annotations.Public;
 import src.mg.itu.prom16.annotations.Required;
 import src.mg.itu.prom16.classes.CustomSession;
 import src.mg.itu.prom16.enumeration.Verbs;
 import src.mg.itu.prom16.exceptions.InvalidParamValueException;
+import src.mg.itu.prom16.exceptions.UnauthorisedUserException;
 import src.mg.itu.prom16.exceptions.UnsupportedVerbException;
+import src.mg.itu.prom16.utils.AuthUtils;
 import src.mg.itu.prom16.utils.Errors;
 import src.mg.itu.prom16.utils.FilePart;
 import src.mg.itu.prom16.utils.Utils;
@@ -240,10 +245,25 @@ public class Mapping {
     }
 
     public Object invoke(Verbs requestVerb, HttpServletRequest request, Errors listError)throws Exception{
+        Class<?> controller =  this.getMethod(requestVerb).getDeclaringClass();
+        Method m = verbMethod.get(requestVerb);
+
+        if (
+            controller.isAnnotationPresent(Authenticated.class)
+                && !m.isAnnotationPresent(Public.class)
+                && !m.isAnnotationPresent(Authenticated.class)
+        ) {
+            Authenticated authenticated = controller.getAnnotation(Authenticated.class);
+            if (!AuthUtils.isAuthorised(request, authenticated)) throw new UnauthorisedUserException("You are not allowed to access this URL");
+        }
+
+        if(m.isAnnotationPresent(Authenticated.class)) {
+            Authenticated authenticated = m.getAnnotation(Authenticated.class);
+            if (!AuthUtils.isAuthorised(request, authenticated)) throw new UnauthorisedUserException("You are not allowed to access this URL");
+        }
         Object o = null;
         try {
             checkParam(requestVerb);
-            Method m = verbMethod.get(requestVerb);
             o = m.invoke(controllerClass.getConstructor().newInstance(), findParams((HttpServletRequest) request, requestVerb, listError));
         } catch (Exception e) {
             throw e;
