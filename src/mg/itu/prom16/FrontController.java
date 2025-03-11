@@ -102,7 +102,7 @@ public class FrontController extends HttpServlet {
             String requestedURL = req.getRequestURL().toString();
             String[] partedReq = requestedURL.split("/");
             String urlToSearch = partedReq[partedReq.length - 1];  
-            System.out.println(requestedURL+": requested URL!!!!");  
+            // System.out.println(requestedURL+": requested URL!!!!");  
             
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {

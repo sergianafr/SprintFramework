@@ -5,10 +5,14 @@ import src.mg.itu.prom16.annotations.NotBlank;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.Authenticator;
 import java.net.http.HttpRequest;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +21,7 @@ import javax.naming.directory.InvalidAttributesException;
 import src.mg.itu.prom16.annotations.Range;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-
+import java.sql.Timestamp;
 import src.mg.itu.prom16.annotations.Param;
 import src.mg.itu.prom16.annotations.Public;
 import src.mg.itu.prom16.annotations.Required;
@@ -193,34 +197,55 @@ public class Mapping {
     }
     
     private Object createObject(HttpServletRequest req, String key, Class<?> paramType) throws Exception {
-        System.out.println(key +" key");
-        System.out.println(req.getParameter(key) +" value");
-        if (paramType == Double.class || paramType == double.class) {
-            String value = req.getParameter(key);
-            return (value != null) ? Double.valueOf(value) : null;
-        } else if (paramType == Float.class || paramType == float.class) {
-            String value = req.getParameter(key);
-            return (value != null) ? Float.valueOf(value) : null;
-        } else if (paramType == Integer.class || paramType == int.class) {
-            String value = req.getParameter(key);
-            return (value != null) ? Integer.valueOf(value) : null;
-        }
-        
-        Object obj = paramType.getDeclaredConstructor().newInstance();
-        Field[] fields = paramType.getDeclaredFields();
-    
-        for (Field field : fields) {
-            String fieldKey = buildFieldKey(key, field);
-            String fieldValue = req.getParameter(fieldKey);
-    
-            if (fieldValue != null) {
-                setFieldValue(obj, field, fieldValue);
-            }
-        }
-        
-        return obj;
+    System.out.println(key + " : key");
+    System.out.println(req.getParameter(key) + " : string value");
+
+    String value = req.getParameter(key);
+
+    // Vérifier si la valeur est vide ou nulle et retourner null dans ce cas
+    if (value == null || value.isEmpty()) {
+        return null;
     }
-    
+
+    // Traitement des types primitifs et wrapper (Double, Float, Integer, etc.)
+    if (paramType == Double.class || paramType == double.class) {
+        return Double.valueOf(value);
+    } else if (paramType == Float.class || paramType == float.class) {
+        return Float.valueOf(value);
+    } else if (paramType == Integer.class || paramType == int.class) {
+        return Integer.valueOf(value);
+    } else if (paramType == Long.class || paramType == long.class) {
+        return Long.valueOf(value);
+    } else if (paramType == java.sql.Timestamp.class) {
+        // Handle Timestamp in yyyy-MM-dd'T'HH:mm format
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+        LocalDateTime localDateTime = LocalDateTime.parse(value, formatter);
+        
+        // Convert LocalDateTime to Timestamp
+        Timestamp timestamp = Timestamp.from(localDateTime.toInstant(ZoneOffset.UTC));
+        return timestamp;
+    }else if(paramType == Boolean.class || paramType == boolean.class){
+        System.out.println("Boolean value: "+Boolean.valueOf(value));
+        return Boolean.valueOf(value);
+    }
+
+    // Traitement pour d'autres types d'objets
+    Object obj = paramType.getDeclaredConstructor().newInstance();
+    Field[] fields = paramType.getDeclaredFields();
+
+    for (Field field : fields) {
+        String fieldKey = buildFieldKey(key, field);
+        String fieldValue = req.getParameter(fieldKey);
+
+        // Si la valeur du champ est vide ou nulle, on ne l'affecte pas
+        if (fieldValue != null && !fieldValue.isEmpty()) {
+            setFieldValue(obj, field, fieldValue);
+        }
+    }
+
+    return obj;
+}
+
     
     private String buildFieldKey(String baseKey, Field field) {
         String fieldKey = baseKey + ".";

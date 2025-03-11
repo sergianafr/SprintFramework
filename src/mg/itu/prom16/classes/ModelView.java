@@ -6,7 +6,20 @@ public class ModelView {
     public String url;
     public HashMap<String, Object> data = new HashMap<>();
     
+    public ModelView(String url) {
+        this.url = url;
+    }
+    public ModelView(String url, HashMap<String, Object> data) {
+        this.url = url;
+        this.data = data;
+    }
+    public ModelView(String url, String nom, Object object) {
+        this.url = url;
+        this.data.put(nom, object);
+    }
     
+    public ModelView() {
+    }
     public HashMap<String, Object> getData() {
         return data;
     }public String getUrl() {
