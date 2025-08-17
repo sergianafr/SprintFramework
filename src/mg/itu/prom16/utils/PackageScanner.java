@@ -31,6 +31,7 @@ public class PackageScanner {
             // filtering class files
             if(f.isFile() && f.getName().endsWith(".class")) {
                 String className = packageName + "." + f.getName().split(".class")[0];
+                System.out.println("Found class: " + className);
                 Class<?> packageClass = Class.forName(className);
                 // checking if it's a controller 
                 if(packageClass.isAnnotationPresent(Controller.class)) {
@@ -55,6 +56,7 @@ public class PackageScanner {
                         String url = getUrl(m);
                         Verbs verb = getVerb(m);
                         Mapping mapping = new Mapping(classe, null);
+                        System.out.println("Mapping: " + url + " with verb: " + verb);
 
                         // Making sure that the url isn't already mapped by another controller 
                         if(urlMapping.containsKey(url) && !urlMapping.get(url).getControllerClass().equals(classe)){

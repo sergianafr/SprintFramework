@@ -5,10 +5,17 @@ import src.mg.itu.prom16.annotations.NotBlank;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.Authenticator;
 import java.net.http.HttpRequest;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +24,7 @@ import javax.naming.directory.InvalidAttributesException;
 import src.mg.itu.prom16.annotations.Range;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-
+import java.sql.Timestamp;
 import src.mg.itu.prom16.annotations.Param;
 import src.mg.itu.prom16.annotations.Public;
 import src.mg.itu.prom16.annotations.Required;
@@ -60,6 +67,7 @@ public class Mapping {
     }
 
     public Method getMethod(Verbs verb)throws Exception {
+        // System.out.println(verbMethod.get(Verbs.GET) + " : method");
         if(verbMethod.get(verb) != null){
             return verbMethod.get(verb);
         }else{
@@ -123,7 +131,8 @@ public class Mapping {
         if(parameter.isAnnotationPresent(src.mg.itu.prom16.annotations.File.class)){
             if(paramType.equals(FilePart.class)){
                 String key = parameter.getAnnotation(File.class).name();
-                result = new FilePart(req.getPart(key), null);
+                result = new FilePart(req.getPart(key), req.getServletContext());
+                return result;
             }
             else{
                 throw new InvalidParamValueException("An object annotated with @File must be of type FilePart");
@@ -156,7 +165,7 @@ public class Mapping {
             }
         }if (param.isAnnotationPresent(NotBlank.class)){
             if(param.getType() == String.class && value == null || (String)value == ""){
-                listErrors.addError(param.getName(),new InvalidParamValueException("The parameter " + param.getName() + " is should not be blank").getMessage());
+                listErrors.addError(param.getName(),new InvalidParamValueException("The parameter " + param.getName() + " should not be blank").getMessage());
                 System.out.println("The parameter " + param.getName() + " is should not be blank"   );
                 // throw new InvalidParamValueException("The parameter " + param.getName() + " is should not be blank");
             }
@@ -193,34 +202,92 @@ public class Mapping {
     }
     
     private Object createObject(HttpServletRequest req, String key, Class<?> paramType) throws Exception {
-        System.out.println(key +" key");
-        System.out.println(req.getParameter(key) +" value");
-        if (paramType == Double.class || paramType == double.class) {
-            String value = req.getParameter(key);
-            return (value != null) ? Double.valueOf(value) : null;
-        } else if (paramType == Float.class || paramType == float.class) {
-            String value = req.getParameter(key);
-            return (value != null) ? Float.valueOf(value) : null;
-        } else if (paramType == Integer.class || paramType == int.class) {
-            String value = req.getParameter(key);
-            return (value != null) ? Integer.valueOf(value) : null;
-        }
+        System.out.println(key + " : key");
+        System.out.println(req.getParameter(key) + " : string value");
+
         
+        String value = req.getParameter(key);
+        // Traitement des types primitifs et wrapper (Double, Float, Integer, etc.)
+        if (paramType == Double.class || paramType == double.class) {
+        
+            // Vérifier si la valeur est vide ou nulle et retourner null dans ce cas
+            if (value == null || value.isEmpty()) {
+                System.out.println("Value is null or empty");
+                return null;
+            }
+            return Double.valueOf(value);
+        } else if (paramType == Float.class || paramType == float.class) {
+            // / Vérifier si la valeur est vide ou nulle et retourner null dans ce cas
+            if (value == null || value.isEmpty()) {
+                System.out.println("Value is null or empty");
+                return null;
+            }
+            return Float.valueOf(value);
+        } else if (paramType == Integer.class || paramType == int.class) {
+            // / Vérifier si la valeur est vide ou nulle et retourner null dans ce cas
+            if (value == null || value.isEmpty()) {
+                System.out.println("Value is null or empty");
+                return null;
+            }
+            return Integer.valueOf(value);
+        } else if (paramType == Long.class || paramType == long.class) {
+            // / Vérifier si la valeur est vide ou nulle et retourner null dans ce cas
+            if (value == null || value.isEmpty()) {
+                System.out.println("Value is null or empty");
+                return null;
+            }
+            return Long.valueOf(value);
+        } else if (paramType == java.sql.Timestamp.class) {
+            // / Vérifier si la valeur est vide ou nulle et retourner null dans ce cas
+            if (value == null || value.isEmpty()) {
+                System.out.println("Value is null or empty");
+                return null;
+            }
+            // Handle Timestamp in yyyy-MM-dd'T'HH:mm format
+            
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+            LocalDateTime localDateTime = LocalDateTime.parse(value, formatter);
+            // Convert LocalDateTime to Timestamp
+            ZoneId systemZone = ZoneId.systemDefault();
+            Instant instant = localDateTime.atZone(systemZone).toInstant();
+            Timestamp timestamp = Timestamp.from(instant);
+            System.out.println("Converted Timestamp: " + timestamp);
+            System.out.println("Timestamp value: " + timestamp);
+            return timestamp;
+        }else if(paramType == java.sql.Date.class) {
+        // Handle Date in yyyy-MM-dd format
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate localDate = LocalDate.parse(value, formatter);
+            // Convert LocalDate to java.sql.Date
+            System.out.println("Converting to java.sql.Date " + java.sql.Date.valueOf(localDate));
+            return java.sql.Date.valueOf(localDate);
+        }else if(paramType == Boolean.class || paramType == boolean.class){
+            // / Vérifier si la valeur est vide ou nulle et retourner null dans ce cas
+            if (value == null || value.isEmpty()) {
+                System.out.println("Value is null or empty");
+                return false;
+            }
+            System.out.println("Boolean value: "+Boolean.valueOf(value));
+            return Boolean.valueOf(value);
+        }
+
+        // Traitement pour d'autres types d'objets
         Object obj = paramType.getDeclaredConstructor().newInstance();
         Field[] fields = paramType.getDeclaredFields();
-    
+
         for (Field field : fields) {
             String fieldKey = buildFieldKey(key, field);
             String fieldValue = req.getParameter(fieldKey);
-    
-            if (fieldValue != null) {
+
+            // Si la valeur du champ est vide ou nulle, on ne l'affecte pas
+            if (fieldValue != null && !fieldValue.isEmpty()) {
                 setFieldValue(obj, field, fieldValue);
             }
         }
-        
+
         return obj;
     }
-    
+
     
     private String buildFieldKey(String baseKey, Field field) {
         String fieldKey = baseKey + ".";
@@ -229,6 +296,7 @@ public class Mapping {
             fieldKey += annotation.name();
         } else {
             fieldKey += field.getName();
+            System.out.println(fieldKey + " : fieldKey");
         }
         return fieldKey;
     }
@@ -264,6 +332,7 @@ public class Mapping {
         Object o = null;
         try {
             checkParam(requestVerb);
+
             o = m.invoke(controllerClass.getConstructor().newInstance(), findParams((HttpServletRequest) request, requestVerb, listError));
         } catch (Exception e) {
             throw e;

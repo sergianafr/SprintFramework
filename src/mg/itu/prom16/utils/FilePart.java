@@ -21,6 +21,7 @@ public class FilePart {
         this.context = context;
     }
 
+
     public byte[] getBytes() throws IOException {
         return part.getInputStream().readAllBytes();
     }
@@ -45,6 +46,7 @@ public class FilePart {
         String projectRoot = context.getRealPath("/");
         // Create the full path
         Path path = Paths.get(projectRoot, "static", filePath, getSubmittedFileName());
+        System.out.println("chemin complet : " + path);
 
         // Get the parent directory of the file
         Path parentDir = path.getParent();
