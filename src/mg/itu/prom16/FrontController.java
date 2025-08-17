@@ -11,10 +11,17 @@ import java.io.PrintWriter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import com.google.gson.Gson;
-
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
 
 import src.mg.itu.prom16.annotations.*;
 import src.mg.itu.prom16.classes.ModelView;
@@ -54,42 +61,82 @@ public class FrontController extends HttpServlet {
 
     
     
-    public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
-        try {
-            PrintWriter out = resp.getWriter();
-            if (mappingMethod.isAnnotationPresent(Restapi.class)){     
-                Gson gson = new Gson();
+    public void checkOutput(HttpServletRequest req, HttpServletResponse resp,
+                            Method mappingMethod, Class<?> retour, Object result)
+            throws ServletException, IOException {
+
+        try (PrintWriter out = resp.getWriter()) {
+
+            if (mappingMethod.isAnnotationPresent(Restapi.class)) {
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
-                
-                // Retrieving the json value of the object returned by the method
-                if(retour == ModelView.class) {
-                    // System.out.println(gson.toJson(((ModelView)result).getData()));
-                    out.print(gson.toJson(((ModelView)result).getData()));
-                    out.flush();
-                }else {
-                    System.out.print(gson.toJson(result));
-                    out.print(gson.toJson(result));       
-                    out.flush();          
+
+                Gson gson = createGson();
+
+                if (retour == ModelView.class) {
+                    out.print(gson.toJson(((ModelView) result).getData()));
+                } else {
+                    out.print(gson.toJson(result));
                 }
-            } else {
-                if(retour == String.class) {
-                    out.println((String) result);
-                } else if(retour == ModelView.class) {
-                    ModelView mv = (ModelView) result;
-                    req.setAttribute("attribut", mv.getData());
-    
-                    RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
-                    dispatcher.forward(req, resp);
-                }else {
-                    throw new ReturnTypeException("The return type is not supported.");
-                }
+                out.flush();
+
+            } else { // rendu JSP/HTML
+                handleView(req, resp, retour, result);
             }
 
         } catch (Exception e) {
             throw e;
         }
-     }
+    }
+
+    // Création du Gson avec TypeAdapters pour Date et Timestamp
+    private Gson createGson() {
+        JsonDeserializer<Date> dateDeserializer = (json, typeOfT, context) -> {
+            try {
+                return Date.valueOf(json.getAsString());
+            } catch (Exception e) {
+                throw new JsonParseException(e);
+            }
+        };
+        JsonSerializer<Date> dateSerializer = (src, typeOfSrc, context) ->
+                new JsonPrimitive(new SimpleDateFormat("yyyy-MM-dd").format(src));
+
+        JsonDeserializer<Timestamp> timestampDeserializer = (json, typeOfT, context) -> {
+            try {
+                return Timestamp.valueOf(json.getAsString().replace("T", " "));
+            } catch (Exception e) {
+                throw new JsonParseException(e);
+            }
+        };
+        JsonSerializer<Timestamp> timestampSerializer = (src, typeOfSrc, context) ->
+                new JsonPrimitive(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(src));
+
+        return new GsonBuilder()
+                .registerTypeAdapter(Date.class, dateSerializer)
+                .registerTypeAdapter(Date.class, dateDeserializer)
+                .registerTypeAdapter(Timestamp.class, timestampSerializer)
+                .registerTypeAdapter(Timestamp.class, timestampDeserializer)
+                .create();
+    }
+
+    // Gestion du rendu JSP/ModelView
+    private void handleView(HttpServletRequest req, HttpServletResponse resp,
+                            Class<?> retour, Object result) throws ServletException, IOException {
+
+        if (retour == String.class) {
+            resp.getWriter().println((String) result);
+
+        } else if (retour == ModelView.class) {
+            ModelView mv = (ModelView) result;
+            req.setAttribute("attribut", mv.getData());
+
+            RequestDispatcher dispatcher = req.getRequestDispatcher(mv.getUrl());
+            dispatcher.forward(req, resp);
+
+        } else {
+            throw new ReturnTypeException("The return type is not supported.");
+        }
+    }
     
      public void processRequest(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if(isStaticFile(req, resp)){
