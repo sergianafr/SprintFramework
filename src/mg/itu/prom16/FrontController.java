@@ -54,7 +54,7 @@ public class FrontController extends HttpServlet {
 
     
     
-     public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
+    public void checkOutput(HttpServletRequest req, HttpServletResponse resp, Method mappingMethod, Class<?> retour, Object result) throws ServletException, IOException {
         try {
             PrintWriter out = resp.getWriter();
             if (mappingMethod.isAnnotationPresent(Restapi.class)){     
@@ -87,7 +87,7 @@ public class FrontController extends HttpServlet {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw e;
         }
      }
     
@@ -102,7 +102,7 @@ public class FrontController extends HttpServlet {
             String requestedURL = req.getRequestURL().toString();
             String[] partedReq = requestedURL.split("/");
             String urlToSearch = partedReq[partedReq.length - 1];  
-            // System.out.println(requestedURL+": requested URL!!!!");  
+            System.out.println(requestedURL+": ------requested URL!!!!");  
             
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
@@ -160,6 +160,7 @@ public class FrontController extends HttpServlet {
         // Vérifier si l'URL correspond à un fichier statique
         for (String ext : staticExtensions) {
             if (relativePath.endsWith(ext)) {
+                System.out.println(relativePath+" ---static file found");
                 java.io.File staticFile = new java.io.File(getServletContext().getRealPath(relativePath));
                 if (staticFile.exists() && staticFile.isFile()) {
                     // Déterminer le type MIME et renvoyer le fichier
@@ -195,6 +196,7 @@ public class FrontController extends HttpServlet {
 	    SESSION_ROLE = getInitParameter("session_role") != null ? getInitParameter("session_role") : "role";
         ServletContext context = getServletContext();
         String packageName = context.getInitParameter("Controllers");
+        System.out.println("FrontController INITIALIZED SUCCESSFULLY!");
 
         // Getting the real path of the package containing the controllers
         String path = "WEB-INF/classes/" + packageName.replace(".", "/");
