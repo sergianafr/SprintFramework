@@ -131,7 +131,8 @@ public class Mapping {
         if(parameter.isAnnotationPresent(src.mg.itu.prom16.annotations.File.class)){
             if(paramType.equals(FilePart.class)){
                 String key = parameter.getAnnotation(File.class).name();
-                result = new FilePart(req.getPart(key), null);
+                result = new FilePart(req.getPart(key), req.getServletContext());
+                return result;
             }
             else{
                 throw new InvalidParamValueException("An object annotated with @File must be of type FilePart");

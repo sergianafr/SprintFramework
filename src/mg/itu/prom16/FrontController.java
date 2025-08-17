@@ -42,7 +42,11 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author SERGIANA
  */
-@MultipartConfig
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024,       // 1 MB avant écriture sur disque
+    maxFileSize = 1024 * 1024 * 50,        // 50 MB par fichier
+    maxRequestSize = 1024 * 1024 * 100     // 100 MB total
+)
 public class FrontController extends HttpServlet {
     protected Verbs verbRequest;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
@@ -71,7 +75,7 @@ public class FrontController extends HttpServlet {
                 resp.setContentType("application/json");
                 resp.setCharacterEncoding("UTF-8");
 
-                Gson gson = createGson();
+                Gson gson = GsonUtil.createGson();
 
                 if (retour == ModelView.class) {
                     out.print(gson.toJson(((ModelView) result).getData()));
@@ -90,34 +94,7 @@ public class FrontController extends HttpServlet {
     }
 
     // Création du Gson avec TypeAdapters pour Date et Timestamp
-    private Gson createGson() {
-        JsonDeserializer<Date> dateDeserializer = (json, typeOfT, context) -> {
-            try {
-                return Date.valueOf(json.getAsString());
-            } catch (Exception e) {
-                throw new JsonParseException(e);
-            }
-        };
-        JsonSerializer<Date> dateSerializer = (src, typeOfSrc, context) ->
-                new JsonPrimitive(new SimpleDateFormat("yyyy-MM-dd").format(src));
-
-        JsonDeserializer<Timestamp> timestampDeserializer = (json, typeOfT, context) -> {
-            try {
-                return Timestamp.valueOf(json.getAsString().replace("T", " "));
-            } catch (Exception e) {
-                throw new JsonParseException(e);
-            }
-        };
-        JsonSerializer<Timestamp> timestampSerializer = (src, typeOfSrc, context) ->
-                new JsonPrimitive(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(src));
-
-        return new GsonBuilder()
-                .registerTypeAdapter(Date.class, dateSerializer)
-                .registerTypeAdapter(Date.class, dateDeserializer)
-                .registerTypeAdapter(Timestamp.class, timestampSerializer)
-                .registerTypeAdapter(Timestamp.class, timestampDeserializer)
-                .create();
-    }
+    
 
     // Gestion du rendu JSP/ModelView
     private void handleView(HttpServletRequest req, HttpServletResponse resp,
