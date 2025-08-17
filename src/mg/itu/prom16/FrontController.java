@@ -40,7 +40,7 @@ public class FrontController extends HttpServlet {
     protected Verbs verbRequest;
     protected HashMap<String,Mapping> urlMapping = new HashMap<String,Mapping>();
     public static String SESSION_AUTHENTICATED, SESSION_ROLE;
-
+    protected String PROJECT_NAME;
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -59,6 +59,8 @@ public class FrontController extends HttpServlet {
             PrintWriter out = resp.getWriter();
             if (mappingMethod.isAnnotationPresent(Restapi.class)){     
                 Gson gson = new Gson();
+                resp.setContentType("application/json");
+                resp.setCharacterEncoding("UTF-8");
                 
                 // Retrieving the json value of the object returned by the method
                 if(retour == ModelView.class) {
@@ -70,8 +72,6 @@ public class FrontController extends HttpServlet {
                     out.print(gson.toJson(result));       
                     out.flush();          
                 }
-                resp.setContentType("text/json");
-                resp.setCharacterEncoding("UTF-8");
             } else {
                 if(retour == String.class) {
                     out.println((String) result);
@@ -98,12 +98,17 @@ public class FrontController extends HttpServlet {
         resp.setContentType("text/plain");
         PrintWriter out = resp.getWriter();
         try {
+            System.out.println("REQUEST URI " + req.getRequestURI());
+            System.out.println("CONTEXT PATHHHH: " + req.getContextPath());
             // getting the URL requested 
-            String requestedURL = req.getRequestURL().toString();
-            String[] partedReq = requestedURL.split("/");
-            String urlToSearch = partedReq[partedReq.length - 1];  
-            System.out.println(requestedURL+": ------requested URL!!!!");  
-            
+            String contextPath = req.getContextPath(); // => "/PROJECT_NAME"
+            String uri = req.getRequestURI();          // => "/PROJECT_NAME/login/check"
+            String urlToSearch = uri.substring(contextPath.length()); // => "/login/check"
+            if (urlToSearch.startsWith("/")) {
+                urlToSearch = urlToSearch.substring(1);
+            }
+            System.out.println(urlToSearch + ": ------requested URL!!!!");
+
             // Finding the url dans le map
             if(urlMapping.containsKey(urlToSearch)) {
                 Errors errors = new Errors();
@@ -191,13 +196,14 @@ public class FrontController extends HttpServlet {
     @Override
     public void init() throws ServletException {
         super.init();
+        PROJECT_NAME = getInitParameter("project_name");
         SESSION_AUTHENTICATED = getInitParameter("session_authenticated") != null? getInitParameter("session_authenticated"): "authenticated";
         System.out.println(SESSION_AUTHENTICATED+" authenticated");
 	    SESSION_ROLE = getInitParameter("session_role") != null ? getInitParameter("session_role") : "role";
         ServletContext context = getServletContext();
         String packageName = context.getInitParameter("Controllers");
         System.out.println("FrontController INITIALIZED SUCCESSFULLY!");
-
+        
         // Getting the real path of the package containing the controllers
         String path = "WEB-INF/classes/" + packageName.replace(".", "/");
         String realPath = getServletContext().getRealPath(path);
