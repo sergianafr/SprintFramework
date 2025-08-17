@@ -26,6 +26,17 @@ Tomcat version: Tomcat 10.1
             <param-value>src.controller</param-value>
         </context-param>
 
+- Add the session keys containing the boolean Authenticated and the role of the user 
+
+        <context-param>
+            <param-name>session_authenticated</param-name> 
+            <param-value>authenticated</param-value>
+        </context-param>
+        <context-param>
+            <param-name>session_role</param-name> 
+            <param-value>role</param-value>
+        </context-param>
+
 ## Annotations
 ### Controller Annotations:
 - The class should be annotated with: @Controller
@@ -35,7 +46,11 @@ Tomcat version: Tomcat 10.1
     - Method post: @Post
     - Restapi method: @Restapi
     - all the parameters of the methods must be annotated with @Param(name=*Parameter's name*),
-        the name must correspond to the name from a form input from where you retrieve its value.
+        the name must correspond to the name from a form input from where you retrieve its value
+    - Files must be annotated with @File annotation
+- To control methods and controllers access, use the following annotations:
+    - @Public to allow everyone
+    - @Authenticated({role1, role2...}) to limit by roles 
 
 ## Session
 To manipulate sessions, you must import the package src.classes.CustomSession
